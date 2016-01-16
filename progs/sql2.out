@@ -1,0 +1,4990 @@
+Terminals unused in grammar
+
+   LANGUAGE
+   PROCEDURE
+   SQLCODE
+
+
+Grammar
+
+    0 $accept: sql_list $end
+
+    1 sql_list: sql ';'
+    2         | sql_list sql ';'
+
+    3 sql: schema
+
+    4 schema: CREATE SCHEMA AUTHORIZATION user opt_schema_element_list
+
+    5 opt_schema_element_list: %empty
+    6                        | schema_element_list
+
+    7 schema_element_list: schema_element
+    8                    | schema_element_list schema_element
+
+    9 schema_element: base_table_def
+   10               | view_def
+   11               | privilege_def
+
+   12 base_table_def: CREATE TABLE table '(' base_table_element_commalist ')'
+
+   13 base_table_element_commalist: base_table_element
+   14                             | base_table_element_commalist ',' base_table_element
+
+   15 base_table_element: column_def
+   16                   | table_constraint_def
+
+   17 column_def: column data_type column_def_opt_list
+
+   18 column_def_opt_list: %empty
+   19                    | column_def_opt_list column_def_opt
+
+   20 column_def_opt: NOT NULLX
+   21               | NOT NULLX UNIQUE
+   22               | NOT NULLX PRIMARY KEY
+   23               | DEFAULT literal
+   24               | DEFAULT NULLX
+   25               | DEFAULT USER
+   26               | CHECK '(' search_condition ')'
+   27               | REFERENCES table
+   28               | REFERENCES table '(' column_commalist ')'
+
+   29 table_constraint_def: UNIQUE '(' column_commalist ')'
+   30                     | PRIMARY KEY '(' column_commalist ')'
+   31                     | FOREIGN KEY '(' column_commalist ')' REFERENCES table
+   32                     | FOREIGN KEY '(' column_commalist ')' REFERENCES table '(' column_commalist ')'
+   33                     | CHECK '(' search_condition ')'
+
+   34 column_commalist: column
+   35                 | column_commalist ',' column
+
+   36 view_def: CREATE VIEW table opt_column_commalist AS query_spec opt_with_check_option
+
+   37 opt_with_check_option: %empty
+   38                      | WITH CHECK OPTION
+
+   39 opt_column_commalist: %empty
+   40                     | '(' column_commalist ')'
+
+   41 privilege_def: GRANT privileges ON table TO grantee_commalist opt_with_grant_option
+
+   42 opt_with_grant_option: %empty
+   43                      | WITH GRANT OPTION
+
+   44 privileges: ALL PRIVILEGES
+   45           | ALL
+   46           | operation_commalist
+
+   47 operation_commalist: operation
+   48                    | operation_commalist ',' operation
+
+   49 operation: SELECT
+   50          | INSERT
+   51          | DELETE
+   52          | UPDATE opt_column_commalist
+   53          | REFERENCES opt_column_commalist
+
+   54 grantee_commalist: grantee
+   55                  | grantee_commalist ',' grantee
+
+   56 grantee: PUBLIC
+   57        | user
+
+   58 sql: cursor_def
+
+   59 cursor_def: DECLARE cursor CURSOR FOR query_exp opt_order_by_clause
+
+   60 opt_order_by_clause: %empty
+   61                    | ORDER BY ordering_spec_commalist
+
+   62 ordering_spec_commalist: ordering_spec
+   63                        | ordering_spec_commalist ',' ordering_spec
+
+   64 ordering_spec: INTNUM opt_asc_desc
+   65              | column_ref opt_asc_desc
+
+   66 opt_asc_desc: %empty
+   67             | ASC
+   68             | DESC
+
+   69 sql: manipulative_statement
+
+   70 manipulative_statement: close_statement
+   71                       | commit_statement
+   72                       | delete_statement_positioned
+   73                       | delete_statement_searched
+   74                       | fetch_statement
+   75                       | insert_statement
+   76                       | open_statement
+   77                       | rollback_statement
+   78                       | select_statement
+   79                       | update_statement_positioned
+   80                       | update_statement_searched
+
+   81 close_statement: CLOSE cursor
+
+   82 commit_statement: COMMIT WORK
+
+   83 delete_statement_positioned: DELETE FROM table WHERE CURRENT OF cursor
+
+   84 delete_statement_searched: DELETE FROM table opt_where_clause
+
+   85 fetch_statement: FETCH cursor INTO target_commalist
+
+   86 insert_statement: INSERT INTO table opt_column_commalist values_or_query_spec
+
+   87 values_or_query_spec: VALUES '(' insert_atom_commalist ')'
+   88                     | query_spec
+
+   89 insert_atom_commalist: insert_atom
+   90                      | insert_atom_commalist ',' insert_atom
+
+   91 insert_atom: atom
+   92            | NULLX
+
+   93 open_statement: OPEN cursor
+
+   94 rollback_statement: ROLLBACK WORK
+
+   95 select_statement: SELECT opt_all_distinct selection INTO target_commalist table_exp
+
+   96 opt_all_distinct: %empty
+   97                 | ALL
+   98                 | DISTINCT
+
+   99 update_statement_positioned: UPDATE table SET assignment_commalist WHERE CURRENT OF cursor
+
+  100 assignment_commalist: %empty
+  101                     | assignment
+  102                     | assignment_commalist ',' assignment
+
+  103 assignment: column '=' scalar_exp
+  104           | column '=' NULLX
+
+  105 update_statement_searched: UPDATE table SET assignment_commalist opt_where_clause
+
+  106 target_commalist: target
+  107                 | target_commalist ',' target
+
+  108 target: parameter_ref
+
+  109 opt_where_clause: %empty
+  110                 | where_clause
+
+  111 query_exp: query_term
+  112          | query_exp UNION query_term
+  113          | query_exp UNION ALL query_term
+
+  114 query_term: query_spec
+  115           | '(' query_exp ')'
+
+  116 query_spec: SELECT opt_all_distinct selection table_exp
+
+  117 selection: scalar_exp_commalist
+  118          | '*'
+
+  119 table_exp: from_clause opt_where_clause opt_group_by_clause opt_having_clause
+
+  120 from_clause: FROM table_ref_commalist
+
+  121 table_ref_commalist: table_ref
+  122                    | table_ref_commalist ',' table_ref
+
+  123 table_ref: table
+  124          | table range_variable
+
+  125 where_clause: WHERE search_condition
+
+  126 opt_group_by_clause: %empty
+  127                    | GROUP BY column_ref_commalist
+
+  128 column_ref_commalist: column_ref
+  129                     | column_ref_commalist ',' column_ref
+
+  130 opt_having_clause: %empty
+  131                  | HAVING search_condition
+
+  132 search_condition: %empty
+  133                 | search_condition OR search_condition
+  134                 | search_condition AND search_condition
+  135                 | NOT search_condition
+  136                 | '(' search_condition ')'
+  137                 | predicate
+
+  138 predicate: comparison_predicate
+  139          | between_predicate
+  140          | like_predicate
+  141          | test_for_null
+  142          | in_predicate
+  143          | all_or_any_predicate
+  144          | existence_test
+
+  145 comparison_predicate: scalar_exp COMPARISON scalar_exp
+  146                     | scalar_exp COMPARISON subquery
+
+  147 between_predicate: scalar_exp NOT BETWEEN scalar_exp AND scalar_exp
+  148                  | scalar_exp BETWEEN scalar_exp AND scalar_exp
+
+  149 like_predicate: scalar_exp NOT LIKE atom opt_escape
+  150               | scalar_exp LIKE atom opt_escape
+
+  151 opt_escape: %empty
+  152           | ESCAPE atom
+
+  153 test_for_null: column_ref IS NOT NULLX
+  154              | column_ref IS NULLX
+
+  155 in_predicate: scalar_exp NOT IN '(' subquery ')'
+  156             | scalar_exp IN '(' subquery ')'
+  157             | scalar_exp NOT IN '(' atom_commalist ')'
+  158             | scalar_exp IN '(' atom_commalist ')'
+
+  159 atom_commalist: atom
+  160               | atom_commalist ',' atom
+
+  161 all_or_any_predicate: scalar_exp COMPARISON any_all_some subquery
+
+  162 any_all_some: ANY
+  163             | ALL
+  164             | SOME
+
+  165 existence_test: EXISTS subquery
+
+  166 subquery: '(' SELECT opt_all_distinct selection table_exp ')'
+
+  167 scalar_exp: scalar_exp '+' scalar_exp
+  168           | scalar_exp '-' scalar_exp
+  169           | scalar_exp '*' scalar_exp
+  170           | scalar_exp '/' scalar_exp
+  171           | '+' scalar_exp
+  172           | '-' scalar_exp
+  173           | atom
+  174           | column_ref
+  175           | function_ref
+  176           | '(' scalar_exp ')'
+
+  177 scalar_exp_commalist: scalar_exp
+  178                     | scalar_exp_commalist ',' scalar_exp
+
+  179 atom: parameter_ref
+  180     | literal
+  181     | USER
+
+  182 parameter_ref: parameter
+  183              | parameter parameter
+  184              | parameter INDICATOR parameter
+
+  185 function_ref: AMMSC '(' '*' ')'
+  186             | AMMSC '(' DISTINCT column_ref ')'
+  187             | AMMSC '(' ALL scalar_exp ')'
+  188             | AMMSC '(' scalar_exp ')'
+
+  189 literal: STRING
+  190        | INTNUM
+  191        | APPROXNUM
+
+  192 table: NAME
+  193      | NAME '.' NAME
+
+  194 column_ref: NAME
+  195           | NAME '.' NAME
+  196           | NAME '.' NAME '.' NAME
+
+  197 data_type: CHARACTER
+  198          | CHARACTER '(' INTNUM ')'
+  199          | NUMERIC
+  200          | NUMERIC '(' INTNUM ')'
+  201          | NUMERIC '(' INTNUM ',' INTNUM ')'
+  202          | DECIMAL
+  203          | DECIMAL '(' INTNUM ')'
+  204          | DECIMAL '(' INTNUM ',' INTNUM ')'
+  205          | INTEGER
+  206          | SMALLINT
+  207          | FLOAT
+  208          | FLOAT '(' INTNUM ')'
+  209          | REAL
+  210          | DOUBLE PRECISION
+
+  211 column: NAME
+
+  212 cursor: NAME
+
+  213 parameter: PARAMETER
+
+  214 range_variable: NAME
+
+  215 user: NAME
+
+  216 sql: WHENEVER NOT FOUND when_action
+  217    | WHENEVER SQLERROR when_action
+
+  218 when_action: GOTO NAME
+  219            | CONTINUE
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'(' (40) 12 26 28 29 30 31 32 33 40 87 115 136 155 156 157 158 166
+    176 185 186 187 188 198 200 201 203 204 208
+')' (41) 12 26 28 29 30 31 32 33 40 87 115 136 155 156 157 158 166
+    176 185 186 187 188 198 200 201 203 204 208
+'*' (42) 118 169 185
+'+' (43) 167 171
+',' (44) 14 35 48 55 63 90 102 107 122 129 160 178 201 204
+'-' (45) 168 172
+'.' (46) 193 195 196
+'/' (47) 170
+';' (59) 1 2
+'=' (61) 103 104
+error (256)
+NAME (258) 192 193 194 195 196 211 212 214 215 218
+STRING (259) 189
+INTNUM (260) 64 190 198 200 201 203 204 208
+APPROXNUM (261) 191
+OR (262) 133
+AND (263) 134 147 148
+NOT (264) 20 21 22 135 147 149 153 155 157 216
+COMPARISON (265) 145 146 161
+UMINUS (266)
+ALL (267) 44 45 97 113 163 187
+AMMSC (268) 185 186 187 188
+ANY (269) 162
+AS (270) 36
+ASC (271) 67
+AUTHORIZATION (272) 4
+BETWEEN (273) 147 148
+BY (274) 61 127
+CHARACTER (275) 197 198
+CHECK (276) 26 33 38
+CLOSE (277) 81
+COMMIT (278) 82
+CONTINUE (279) 219
+CREATE (280) 4 12 36
+CURRENT (281) 83 99
+CURSOR (282) 59
+DECIMAL (283) 202 203 204
+DECLARE (284) 59
+DEFAULT (285) 23 24 25
+DELETE (286) 51 83 84
+DESC (287) 68
+DISTINCT (288) 98 186
+DOUBLE (289) 210
+ESCAPE (290) 152
+EXISTS (291) 165
+FETCH (292) 85
+FLOAT (293) 207 208
+FOR (294) 59
+FOREIGN (295) 31 32
+FOUND (296) 216
+FROM (297) 83 84 120
+GOTO (298) 218
+GRANT (299) 41 43
+GROUP (300) 127
+HAVING (301) 131
+IN (302) 155 156 157 158
+INDICATOR (303) 184
+INSERT (304) 50 86
+INTEGER (305) 205
+INTO (306) 85 86 95
+IS (307) 153 154
+KEY (308) 22 30 31 32
+LANGUAGE (309)
+LIKE (310) 149 150
+NULLX (311) 20 21 22 24 92 104 153 154
+NUMERIC (312) 199 200 201
+OF (313) 83 99
+ON (314) 41
+OPEN (315) 93
+OPTION (316) 38 43
+ORDER (317) 61
+PARAMETER (318) 213
+PRECISION (319) 210
+PRIMARY (320) 22 30
+PRIVILEGES (321) 44
+PROCEDURE (322)
+PUBLIC (323) 56
+REAL (324) 209
+REFERENCES (325) 27 28 31 32 53
+ROLLBACK (326) 94
+SCHEMA (327) 4
+SELECT (328) 49 95 116 166
+SET (329) 99 105
+SMALLINT (330) 206
+SOME (331) 164
+SQLCODE (332)
+SQLERROR (333) 217
+TABLE (334) 12
+TO (335) 41
+UNION (336) 112 113
+UNIQUE (337) 21 29
+UPDATE (338) 52 99 105
+USER (339) 25 181
+VALUES (340) 87
+VIEW (341) 36
+WHENEVER (342) 216 217
+WHERE (343) 83 99 125
+WITH (344) 38 43
+WORK (345) 82 94
+
+
+Nonterminals, with rules where they appear
+
+$accept (101)
+    on left: 0
+sql_list (102)
+    on left: 1 2, on right: 0 2
+sql (103)
+    on left: 3 58 69 216 217, on right: 1 2
+schema (104)
+    on left: 4, on right: 3
+opt_schema_element_list (105)
+    on left: 5 6, on right: 4
+schema_element_list (106)
+    on left: 7 8, on right: 6 8
+schema_element (107)
+    on left: 9 10 11, on right: 7 8
+base_table_def (108)
+    on left: 12, on right: 9
+base_table_element_commalist (109)
+    on left: 13 14, on right: 12 14
+base_table_element (110)
+    on left: 15 16, on right: 13 14
+column_def (111)
+    on left: 17, on right: 15
+column_def_opt_list (112)
+    on left: 18 19, on right: 17 19
+column_def_opt (113)
+    on left: 20 21 22 23 24 25 26 27 28, on right: 19
+table_constraint_def (114)
+    on left: 29 30 31 32 33, on right: 16
+column_commalist (115)
+    on left: 34 35, on right: 28 29 30 31 32 35 40
+view_def (116)
+    on left: 36, on right: 10
+opt_with_check_option (117)
+    on left: 37 38, on right: 36
+opt_column_commalist (118)
+    on left: 39 40, on right: 36 52 53 86
+privilege_def (119)
+    on left: 41, on right: 11
+opt_with_grant_option (120)
+    on left: 42 43, on right: 41
+privileges (121)
+    on left: 44 45 46, on right: 41
+operation_commalist (122)
+    on left: 47 48, on right: 46 48
+operation (123)
+    on left: 49 50 51 52 53, on right: 47 48
+grantee_commalist (124)
+    on left: 54 55, on right: 41 55
+grantee (125)
+    on left: 56 57, on right: 54 55
+cursor_def (126)
+    on left: 59, on right: 58
+opt_order_by_clause (127)
+    on left: 60 61, on right: 59
+ordering_spec_commalist (128)
+    on left: 62 63, on right: 61 63
+ordering_spec (129)
+    on left: 64 65, on right: 62 63
+opt_asc_desc (130)
+    on left: 66 67 68, on right: 64 65
+manipulative_statement (131)
+    on left: 70 71 72 73 74 75 76 77 78 79 80, on right: 69
+close_statement (132)
+    on left: 81, on right: 70
+commit_statement (133)
+    on left: 82, on right: 71
+delete_statement_positioned (134)
+    on left: 83, on right: 72
+delete_statement_searched (135)
+    on left: 84, on right: 73
+fetch_statement (136)
+    on left: 85, on right: 74
+insert_statement (137)
+    on left: 86, on right: 75
+values_or_query_spec (138)
+    on left: 87 88, on right: 86
+insert_atom_commalist (139)
+    on left: 89 90, on right: 87 90
+insert_atom (140)
+    on left: 91 92, on right: 89 90
+open_statement (141)
+    on left: 93, on right: 76
+rollback_statement (142)
+    on left: 94, on right: 77
+select_statement (143)
+    on left: 95, on right: 78
+opt_all_distinct (144)
+    on left: 96 97 98, on right: 95 116 166
+update_statement_positioned (145)
+    on left: 99, on right: 79
+assignment_commalist (146)
+    on left: 100 101 102, on right: 99 102 105
+assignment (147)
+    on left: 103 104, on right: 101 102
+update_statement_searched (148)
+    on left: 105, on right: 80
+target_commalist (149)
+    on left: 106 107, on right: 85 95 107
+target (150)
+    on left: 108, on right: 106 107
+opt_where_clause (151)
+    on left: 109 110, on right: 84 105 119
+query_exp (152)
+    on left: 111 112 113, on right: 59 112 113 115
+query_term (153)
+    on left: 114 115, on right: 111 112 113
+query_spec (154)
+    on left: 116, on right: 36 88 114
+selection (155)
+    on left: 117 118, on right: 95 116 166
+table_exp (156)
+    on left: 119, on right: 95 116 166
+from_clause (157)
+    on left: 120, on right: 119
+table_ref_commalist (158)
+    on left: 121 122, on right: 120 122
+table_ref (159)
+    on left: 123 124, on right: 121 122
+where_clause (160)
+    on left: 125, on right: 110
+opt_group_by_clause (161)
+    on left: 126 127, on right: 119
+column_ref_commalist (162)
+    on left: 128 129, on right: 127 129
+opt_having_clause (163)
+    on left: 130 131, on right: 119
+search_condition (164)
+    on left: 132 133 134 135 136 137, on right: 26 33 125 131 133 134
+    135 136
+predicate (165)
+    on left: 138 139 140 141 142 143 144, on right: 137
+comparison_predicate (166)
+    on left: 145 146, on right: 138
+between_predicate (167)
+    on left: 147 148, on right: 139
+like_predicate (168)
+    on left: 149 150, on right: 140
+opt_escape (169)
+    on left: 151 152, on right: 149 150
+test_for_null (170)
+    on left: 153 154, on right: 141
+in_predicate (171)
+    on left: 155 156 157 158, on right: 142
+atom_commalist (172)
+    on left: 159 160, on right: 157 158 160
+all_or_any_predicate (173)
+    on left: 161, on right: 143
+any_all_some (174)
+    on left: 162 163 164, on right: 161
+existence_test (175)
+    on left: 165, on right: 144
+subquery (176)
+    on left: 166, on right: 146 155 156 161 165
+scalar_exp (177)
+    on left: 167 168 169 170 171 172 173 174 175 176, on right: 103
+    145 146 147 148 149 150 155 156 157 158 161 167 168 169 170 171
+    172 176 177 178 187 188
+scalar_exp_commalist (178)
+    on left: 177 178, on right: 117 178
+atom (179)
+    on left: 179 180 181, on right: 91 149 150 152 159 160 173
+parameter_ref (180)
+    on left: 182 183 184, on right: 108 179
+function_ref (181)
+    on left: 185 186 187 188, on right: 175
+literal (182)
+    on left: 189 190 191, on right: 23 180
+table (183)
+    on left: 192 193, on right: 12 27 28 31 32 36 41 83 84 86 99 105
+    123 124
+column_ref (184)
+    on left: 194 195 196, on right: 65 128 129 153 154 174 186
+data_type (185)
+    on left: 197 198 199 200 201 202 203 204 205 206 207 208 209 210,
+    on right: 17
+column (186)
+    on left: 211, on right: 17 34 35 103 104
+cursor (187)
+    on left: 212, on right: 59 81 83 85 93 99
+parameter (188)
+    on left: 213, on right: 182 183 184
+range_variable (189)
+    on left: 214, on right: 124
+user (190)
+    on left: 215, on right: 4 57
+when_action (191)
+    on left: 218 219, on right: 216 217
+
+
+State 0
+
+    0 $accept: . sql_list $end
+
+    CLOSE     shift, and go to state 1
+    COMMIT    shift, and go to state 2
+    CREATE    shift, and go to state 3
+    DECLARE   shift, and go to state 4
+    DELETE    shift, and go to state 5
+    FETCH     shift, and go to state 6
+    INSERT    shift, and go to state 7
+    OPEN      shift, and go to state 8
+    ROLLBACK  shift, and go to state 9
+    SELECT    shift, and go to state 10
+    UPDATE    shift, and go to state 11
+    WHENEVER  shift, and go to state 12
+
+    sql_list                     go to state 13
+    sql                          go to state 14
+    schema                       go to state 15
+    cursor_def                   go to state 16
+    manipulative_statement       go to state 17
+    close_statement              go to state 18
+    commit_statement             go to state 19
+    delete_statement_positioned  go to state 20
+    delete_statement_searched    go to state 21
+    fetch_statement              go to state 22
+    insert_statement             go to state 23
+    open_statement               go to state 24
+    rollback_statement           go to state 25
+    select_statement             go to state 26
+    update_statement_positioned  go to state 27
+    update_statement_searched    go to state 28
+
+
+State 1
+
+   81 close_statement: CLOSE . cursor
+
+    NAME  shift, and go to state 29
+
+    cursor  go to state 30
+
+
+State 2
+
+   82 commit_statement: COMMIT . WORK
+
+    WORK  shift, and go to state 31
+
+
+State 3
+
+    4 schema: CREATE . SCHEMA AUTHORIZATION user opt_schema_element_list
+
+    SCHEMA  shift, and go to state 32
+
+
+State 4
+
+   59 cursor_def: DECLARE . cursor CURSOR FOR query_exp opt_order_by_clause
+
+    NAME  shift, and go to state 29
+
+    cursor  go to state 33
+
+
+State 5
+
+   83 delete_statement_positioned: DELETE . FROM table WHERE CURRENT OF cursor
+   84 delete_statement_searched: DELETE . FROM table opt_where_clause
+
+    FROM  shift, and go to state 34
+
+
+State 6
+
+   85 fetch_statement: FETCH . cursor INTO target_commalist
+
+    NAME  shift, and go to state 29
+
+    cursor  go to state 35
+
+
+State 7
+
+   86 insert_statement: INSERT . INTO table opt_column_commalist values_or_query_spec
+
+    INTO  shift, and go to state 36
+
+
+State 8
+
+   93 open_statement: OPEN . cursor
+
+    NAME  shift, and go to state 29
+
+    cursor  go to state 37
+
+
+State 9
+
+   94 rollback_statement: ROLLBACK . WORK
+
+    WORK  shift, and go to state 38
+
+
+State 10
+
+   95 select_statement: SELECT . opt_all_distinct selection INTO target_commalist table_exp
+
+    ALL       shift, and go to state 39
+    DISTINCT  shift, and go to state 40
+
+    $default  reduce using rule 96 (opt_all_distinct)
+
+    opt_all_distinct  go to state 41
+
+
+State 11
+
+   99 update_statement_positioned: UPDATE . table SET assignment_commalist WHERE CURRENT OF cursor
+  105 update_statement_searched: UPDATE . table SET assignment_commalist opt_where_clause
+
+    NAME  shift, and go to state 42
+
+    table  go to state 43
+
+
+State 12
+
+  216 sql: WHENEVER . NOT FOUND when_action
+  217    | WHENEVER . SQLERROR when_action
+
+    NOT       shift, and go to state 44
+    SQLERROR  shift, and go to state 45
+
+
+State 13
+
+    0 $accept: sql_list . $end
+    2 sql_list: sql_list . sql ';'
+
+    $end      shift, and go to state 46
+    CLOSE     shift, and go to state 1
+    COMMIT    shift, and go to state 2
+    CREATE    shift, and go to state 3
+    DECLARE   shift, and go to state 4
+    DELETE    shift, and go to state 5
+    FETCH     shift, and go to state 6
+    INSERT    shift, and go to state 7
+    OPEN      shift, and go to state 8
+    ROLLBACK  shift, and go to state 9
+    SELECT    shift, and go to state 10
+    UPDATE    shift, and go to state 11
+    WHENEVER  shift, and go to state 12
+
+    sql                          go to state 47
+    schema                       go to state 15
+    cursor_def                   go to state 16
+    manipulative_statement       go to state 17
+    close_statement              go to state 18
+    commit_statement             go to state 19
+    delete_statement_positioned  go to state 20
+    delete_statement_searched    go to state 21
+    fetch_statement              go to state 22
+    insert_statement             go to state 23
+    open_statement               go to state 24
+    rollback_statement           go to state 25
+    select_statement             go to state 26
+    update_statement_positioned  go to state 27
+    update_statement_searched    go to state 28
+
+
+State 14
+
+    1 sql_list: sql . ';'
+
+    ';'  shift, and go to state 48
+
+
+State 15
+
+    3 sql: schema .
+
+    $default  reduce using rule 3 (sql)
+
+
+State 16
+
+   58 sql: cursor_def .
+
+    $default  reduce using rule 58 (sql)
+
+
+State 17
+
+   69 sql: manipulative_statement .
+
+    $default  reduce using rule 69 (sql)
+
+
+State 18
+
+   70 manipulative_statement: close_statement .
+
+    $default  reduce using rule 70 (manipulative_statement)
+
+
+State 19
+
+   71 manipulative_statement: commit_statement .
+
+    $default  reduce using rule 71 (manipulative_statement)
+
+
+State 20
+
+   72 manipulative_statement: delete_statement_positioned .
+
+    $default  reduce using rule 72 (manipulative_statement)
+
+
+State 21
+
+   73 manipulative_statement: delete_statement_searched .
+
+    $default  reduce using rule 73 (manipulative_statement)
+
+
+State 22
+
+   74 manipulative_statement: fetch_statement .
+
+    $default  reduce using rule 74 (manipulative_statement)
+
+
+State 23
+
+   75 manipulative_statement: insert_statement .
+
+    $default  reduce using rule 75 (manipulative_statement)
+
+
+State 24
+
+   76 manipulative_statement: open_statement .
+
+    $default  reduce using rule 76 (manipulative_statement)
+
+
+State 25
+
+   77 manipulative_statement: rollback_statement .
+
+    $default  reduce using rule 77 (manipulative_statement)
+
+
+State 26
+
+   78 manipulative_statement: select_statement .
+
+    $default  reduce using rule 78 (manipulative_statement)
+
+
+State 27
+
+   79 manipulative_statement: update_statement_positioned .
+
+    $default  reduce using rule 79 (manipulative_statement)
+
+
+State 28
+
+   80 manipulative_statement: update_statement_searched .
+
+    $default  reduce using rule 80 (manipulative_statement)
+
+
+State 29
+
+  212 cursor: NAME .
+
+    $default  reduce using rule 212 (cursor)
+
+
+State 30
+
+   81 close_statement: CLOSE cursor .
+
+    $default  reduce using rule 81 (close_statement)
+
+
+State 31
+
+   82 commit_statement: COMMIT WORK .
+
+    $default  reduce using rule 82 (commit_statement)
+
+
+State 32
+
+    4 schema: CREATE SCHEMA . AUTHORIZATION user opt_schema_element_list
+
+    AUTHORIZATION  shift, and go to state 49
+
+
+State 33
+
+   59 cursor_def: DECLARE cursor . CURSOR FOR query_exp opt_order_by_clause
+
+    CURSOR  shift, and go to state 50
+
+
+State 34
+
+   83 delete_statement_positioned: DELETE FROM . table WHERE CURRENT OF cursor
+   84 delete_statement_searched: DELETE FROM . table opt_where_clause
+
+    NAME  shift, and go to state 42
+
+    table  go to state 51
+
+
+State 35
+
+   85 fetch_statement: FETCH cursor . INTO target_commalist
+
+    INTO  shift, and go to state 52
+
+
+State 36
+
+   86 insert_statement: INSERT INTO . table opt_column_commalist values_or_query_spec
+
+    NAME  shift, and go to state 42
+
+    table  go to state 53
+
+
+State 37
+
+   93 open_statement: OPEN cursor .
+
+    $default  reduce using rule 93 (open_statement)
+
+
+State 38
+
+   94 rollback_statement: ROLLBACK WORK .
+
+    $default  reduce using rule 94 (rollback_statement)
+
+
+State 39
+
+   97 opt_all_distinct: ALL .
+
+    $default  reduce using rule 97 (opt_all_distinct)
+
+
+State 40
+
+   98 opt_all_distinct: DISTINCT .
+
+    $default  reduce using rule 98 (opt_all_distinct)
+
+
+State 41
+
+   95 select_statement: SELECT opt_all_distinct . selection INTO target_commalist table_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    '*'        shift, and go to state 60
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    selection             go to state 65
+    scalar_exp            go to state 66
+    scalar_exp_commalist  go to state 67
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 72
+    parameter             go to state 73
+
+
+State 42
+
+  192 table: NAME .
+  193      | NAME . '.' NAME
+
+    '.'  shift, and go to state 74
+
+    $default  reduce using rule 192 (table)
+
+
+State 43
+
+   99 update_statement_positioned: UPDATE table . SET assignment_commalist WHERE CURRENT OF cursor
+  105 update_statement_searched: UPDATE table . SET assignment_commalist opt_where_clause
+
+    SET  shift, and go to state 75
+
+
+State 44
+
+  216 sql: WHENEVER NOT . FOUND when_action
+
+    FOUND  shift, and go to state 76
+
+
+State 45
+
+  217 sql: WHENEVER SQLERROR . when_action
+
+    CONTINUE  shift, and go to state 77
+    GOTO      shift, and go to state 78
+
+    when_action  go to state 79
+
+
+State 46
+
+    0 $accept: sql_list $end .
+
+    $default  accept
+
+
+State 47
+
+    2 sql_list: sql_list sql . ';'
+
+    ';'  shift, and go to state 80
+
+
+State 48
+
+    1 sql_list: sql ';' .
+
+    $default  reduce using rule 1 (sql_list)
+
+
+State 49
+
+    4 schema: CREATE SCHEMA AUTHORIZATION . user opt_schema_element_list
+
+    NAME  shift, and go to state 81
+
+    user  go to state 82
+
+
+State 50
+
+   59 cursor_def: DECLARE cursor CURSOR . FOR query_exp opt_order_by_clause
+
+    FOR  shift, and go to state 83
+
+
+State 51
+
+   83 delete_statement_positioned: DELETE FROM table . WHERE CURRENT OF cursor
+   84 delete_statement_searched: DELETE FROM table . opt_where_clause
+
+    WHERE  shift, and go to state 84
+
+    $default  reduce using rule 109 (opt_where_clause)
+
+    opt_where_clause  go to state 85
+    where_clause      go to state 86
+
+
+State 52
+
+   85 fetch_statement: FETCH cursor INTO . target_commalist
+
+    PARAMETER  shift, and go to state 62
+
+    target_commalist  go to state 87
+    target            go to state 88
+    parameter_ref     go to state 89
+    parameter         go to state 73
+
+
+State 53
+
+   86 insert_statement: INSERT INTO table . opt_column_commalist values_or_query_spec
+
+    '('  shift, and go to state 90
+
+    $default  reduce using rule 39 (opt_column_commalist)
+
+    opt_column_commalist  go to state 91
+
+
+State 54
+
+  194 column_ref: NAME .
+  195           | NAME . '.' NAME
+  196           | NAME . '.' NAME '.' NAME
+
+    '.'  shift, and go to state 92
+
+    $default  reduce using rule 194 (column_ref)
+
+
+State 55
+
+  189 literal: STRING .
+
+    $default  reduce using rule 189 (literal)
+
+
+State 56
+
+  190 literal: INTNUM .
+
+    $default  reduce using rule 190 (literal)
+
+
+State 57
+
+  191 literal: APPROXNUM .
+
+    $default  reduce using rule 191 (literal)
+
+
+State 58
+
+  171 scalar_exp: '+' . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 93
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 59
+
+  172 scalar_exp: '-' . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 94
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 60
+
+  118 selection: '*' .
+
+    $default  reduce using rule 118 (selection)
+
+
+State 61
+
+  185 function_ref: AMMSC . '(' '*' ')'
+  186             | AMMSC . '(' DISTINCT column_ref ')'
+  187             | AMMSC . '(' ALL scalar_exp ')'
+  188             | AMMSC . '(' scalar_exp ')'
+
+    '('  shift, and go to state 95
+
+
+State 62
+
+  213 parameter: PARAMETER .
+
+    $default  reduce using rule 213 (parameter)
+
+
+State 63
+
+  181 atom: USER .
+
+    $default  reduce using rule 181 (atom)
+
+
+State 64
+
+  176 scalar_exp: '(' . scalar_exp ')'
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 96
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 65
+
+   95 select_statement: SELECT opt_all_distinct selection . INTO target_commalist table_exp
+
+    INTO  shift, and go to state 97
+
+
+State 66
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  177 scalar_exp_commalist: scalar_exp .
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+    $default  reduce using rule 177 (scalar_exp_commalist)
+
+
+State 67
+
+  117 selection: scalar_exp_commalist .
+  178 scalar_exp_commalist: scalar_exp_commalist . ',' scalar_exp
+
+    ','  shift, and go to state 102
+
+    $default  reduce using rule 117 (selection)
+
+
+State 68
+
+  173 scalar_exp: atom .
+
+    $default  reduce using rule 173 (scalar_exp)
+
+
+State 69
+
+  179 atom: parameter_ref .
+
+    $default  reduce using rule 179 (atom)
+
+
+State 70
+
+  175 scalar_exp: function_ref .
+
+    $default  reduce using rule 175 (scalar_exp)
+
+
+State 71
+
+  180 atom: literal .
+
+    $default  reduce using rule 180 (atom)
+
+
+State 72
+
+  174 scalar_exp: column_ref .
+
+    $default  reduce using rule 174 (scalar_exp)
+
+
+State 73
+
+  182 parameter_ref: parameter .
+  183              | parameter . parameter
+  184              | parameter . INDICATOR parameter
+
+    INDICATOR  shift, and go to state 103
+    PARAMETER  shift, and go to state 62
+
+    $default  reduce using rule 182 (parameter_ref)
+
+    parameter  go to state 104
+
+
+State 74
+
+  193 table: NAME '.' . NAME
+
+    NAME  shift, and go to state 105
+
+
+State 75
+
+   99 update_statement_positioned: UPDATE table SET . assignment_commalist WHERE CURRENT OF cursor
+  105 update_statement_searched: UPDATE table SET . assignment_commalist opt_where_clause
+
+    NAME  shift, and go to state 106
+
+    $default  reduce using rule 100 (assignment_commalist)
+
+    assignment_commalist  go to state 107
+    assignment            go to state 108
+    column                go to state 109
+
+
+State 76
+
+  216 sql: WHENEVER NOT FOUND . when_action
+
+    CONTINUE  shift, and go to state 77
+    GOTO      shift, and go to state 78
+
+    when_action  go to state 110
+
+
+State 77
+
+  219 when_action: CONTINUE .
+
+    $default  reduce using rule 219 (when_action)
+
+
+State 78
+
+  218 when_action: GOTO . NAME
+
+    NAME  shift, and go to state 111
+
+
+State 79
+
+  217 sql: WHENEVER SQLERROR when_action .
+
+    $default  reduce using rule 217 (sql)
+
+
+State 80
+
+    2 sql_list: sql_list sql ';' .
+
+    $default  reduce using rule 2 (sql_list)
+
+
+State 81
+
+  215 user: NAME .
+
+    $default  reduce using rule 215 (user)
+
+
+State 82
+
+    4 schema: CREATE SCHEMA AUTHORIZATION user . opt_schema_element_list
+
+    CREATE  shift, and go to state 112
+    GRANT   shift, and go to state 113
+
+    $default  reduce using rule 5 (opt_schema_element_list)
+
+    opt_schema_element_list  go to state 114
+    schema_element_list      go to state 115
+    schema_element           go to state 116
+    base_table_def           go to state 117
+    view_def                 go to state 118
+    privilege_def            go to state 119
+
+
+State 83
+
+   59 cursor_def: DECLARE cursor CURSOR FOR . query_exp opt_order_by_clause
+
+    SELECT  shift, and go to state 120
+    '('     shift, and go to state 121
+
+    query_exp   go to state 122
+    query_term  go to state 123
+    query_spec  go to state 124
+
+
+State 84
+
+   83 delete_statement_positioned: DELETE FROM table WHERE . CURRENT OF cursor
+  125 where_clause: WHERE . search_condition
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    CURRENT    shift, and go to state 126
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 129
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 85
+
+   84 delete_statement_searched: DELETE FROM table opt_where_clause .
+
+    $default  reduce using rule 84 (delete_statement_searched)
+
+
+State 86
+
+  110 opt_where_clause: where_clause .
+
+    $default  reduce using rule 110 (opt_where_clause)
+
+
+State 87
+
+   85 fetch_statement: FETCH cursor INTO target_commalist .
+  107 target_commalist: target_commalist . ',' target
+
+    ','  shift, and go to state 140
+
+    $default  reduce using rule 85 (fetch_statement)
+
+
+State 88
+
+  106 target_commalist: target .
+
+    $default  reduce using rule 106 (target_commalist)
+
+
+State 89
+
+  108 target: parameter_ref .
+
+    $default  reduce using rule 108 (target)
+
+
+State 90
+
+   40 opt_column_commalist: '(' . column_commalist ')'
+
+    NAME  shift, and go to state 106
+
+    column_commalist  go to state 141
+    column            go to state 142
+
+
+State 91
+
+   86 insert_statement: INSERT INTO table opt_column_commalist . values_or_query_spec
+
+    SELECT  shift, and go to state 120
+    VALUES  shift, and go to state 143
+
+    values_or_query_spec  go to state 144
+    query_spec            go to state 145
+
+
+State 92
+
+  195 column_ref: NAME '.' . NAME
+  196           | NAME '.' . NAME '.' NAME
+
+    NAME  shift, and go to state 146
+
+
+State 93
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  171           | '+' scalar_exp .
+
+    $default  reduce using rule 171 (scalar_exp)
+
+
+State 94
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  172           | '-' scalar_exp .
+
+    $default  reduce using rule 172 (scalar_exp)
+
+
+State 95
+
+  185 function_ref: AMMSC '(' . '*' ')'
+  186             | AMMSC '(' . DISTINCT column_ref ')'
+  187             | AMMSC '(' . ALL scalar_exp ')'
+  188             | AMMSC '(' . scalar_exp ')'
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    '*'        shift, and go to state 147
+    ALL        shift, and go to state 148
+    AMMSC      shift, and go to state 61
+    DISTINCT   shift, and go to state 149
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 150
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 96
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  176           | '(' scalar_exp . ')'
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+    ')'  shift, and go to state 151
+
+
+State 97
+
+   95 select_statement: SELECT opt_all_distinct selection INTO . target_commalist table_exp
+
+    PARAMETER  shift, and go to state 62
+
+    target_commalist  go to state 152
+    target            go to state 88
+    parameter_ref     go to state 89
+    parameter         go to state 73
+
+
+State 98
+
+  167 scalar_exp: scalar_exp '+' . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 153
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 99
+
+  168 scalar_exp: scalar_exp '-' . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 154
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 100
+
+  169 scalar_exp: scalar_exp '*' . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 155
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 101
+
+  170 scalar_exp: scalar_exp '/' . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 156
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 102
+
+  178 scalar_exp_commalist: scalar_exp_commalist ',' . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 157
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 103
+
+  184 parameter_ref: parameter INDICATOR . parameter
+
+    PARAMETER  shift, and go to state 62
+
+    parameter  go to state 158
+
+
+State 104
+
+  183 parameter_ref: parameter parameter .
+
+    $default  reduce using rule 183 (parameter_ref)
+
+
+State 105
+
+  193 table: NAME '.' NAME .
+
+    $default  reduce using rule 193 (table)
+
+
+State 106
+
+  211 column: NAME .
+
+    $default  reduce using rule 211 (column)
+
+
+State 107
+
+   99 update_statement_positioned: UPDATE table SET assignment_commalist . WHERE CURRENT OF cursor
+  102 assignment_commalist: assignment_commalist . ',' assignment
+  105 update_statement_searched: UPDATE table SET assignment_commalist . opt_where_clause
+
+    WHERE  shift, and go to state 159
+    ','    shift, and go to state 160
+
+    $default  reduce using rule 109 (opt_where_clause)
+
+    opt_where_clause  go to state 161
+    where_clause      go to state 86
+
+
+State 108
+
+  101 assignment_commalist: assignment .
+
+    $default  reduce using rule 101 (assignment_commalist)
+
+
+State 109
+
+  103 assignment: column . '=' scalar_exp
+  104           | column . '=' NULLX
+
+    '='  shift, and go to state 162
+
+
+State 110
+
+  216 sql: WHENEVER NOT FOUND when_action .
+
+    $default  reduce using rule 216 (sql)
+
+
+State 111
+
+  218 when_action: GOTO NAME .
+
+    $default  reduce using rule 218 (when_action)
+
+
+State 112
+
+   12 base_table_def: CREATE . TABLE table '(' base_table_element_commalist ')'
+   36 view_def: CREATE . VIEW table opt_column_commalist AS query_spec opt_with_check_option
+
+    TABLE  shift, and go to state 163
+    VIEW   shift, and go to state 164
+
+
+State 113
+
+   41 privilege_def: GRANT . privileges ON table TO grantee_commalist opt_with_grant_option
+
+    ALL         shift, and go to state 165
+    DELETE      shift, and go to state 166
+    INSERT      shift, and go to state 167
+    REFERENCES  shift, and go to state 168
+    SELECT      shift, and go to state 169
+    UPDATE      shift, and go to state 170
+
+    privileges           go to state 171
+    operation_commalist  go to state 172
+    operation            go to state 173
+
+
+State 114
+
+    4 schema: CREATE SCHEMA AUTHORIZATION user opt_schema_element_list .
+
+    $default  reduce using rule 4 (schema)
+
+
+State 115
+
+    6 opt_schema_element_list: schema_element_list .
+    8 schema_element_list: schema_element_list . schema_element
+
+    CREATE  shift, and go to state 112
+    GRANT   shift, and go to state 113
+
+    $default  reduce using rule 6 (opt_schema_element_list)
+
+    schema_element  go to state 174
+    base_table_def  go to state 117
+    view_def        go to state 118
+    privilege_def   go to state 119
+
+
+State 116
+
+    7 schema_element_list: schema_element .
+
+    $default  reduce using rule 7 (schema_element_list)
+
+
+State 117
+
+    9 schema_element: base_table_def .
+
+    $default  reduce using rule 9 (schema_element)
+
+
+State 118
+
+   10 schema_element: view_def .
+
+    $default  reduce using rule 10 (schema_element)
+
+
+State 119
+
+   11 schema_element: privilege_def .
+
+    $default  reduce using rule 11 (schema_element)
+
+
+State 120
+
+  116 query_spec: SELECT . opt_all_distinct selection table_exp
+
+    ALL       shift, and go to state 39
+    DISTINCT  shift, and go to state 40
+
+    $default  reduce using rule 96 (opt_all_distinct)
+
+    opt_all_distinct  go to state 175
+
+
+State 121
+
+  115 query_term: '(' . query_exp ')'
+
+    SELECT  shift, and go to state 120
+    '('     shift, and go to state 121
+
+    query_exp   go to state 176
+    query_term  go to state 123
+    query_spec  go to state 124
+
+
+State 122
+
+   59 cursor_def: DECLARE cursor CURSOR FOR query_exp . opt_order_by_clause
+  112 query_exp: query_exp . UNION query_term
+  113          | query_exp . UNION ALL query_term
+
+    ORDER  shift, and go to state 177
+    UNION  shift, and go to state 178
+
+    $default  reduce using rule 60 (opt_order_by_clause)
+
+    opt_order_by_clause  go to state 179
+
+
+State 123
+
+  111 query_exp: query_term .
+
+    $default  reduce using rule 111 (query_exp)
+
+
+State 124
+
+  114 query_term: query_spec .
+
+    $default  reduce using rule 114 (query_term)
+
+
+State 125
+
+  135 search_condition: NOT . search_condition
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 180
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 126
+
+   83 delete_statement_positioned: DELETE FROM table WHERE CURRENT . OF cursor
+
+    OF  shift, and go to state 181
+
+
+State 127
+
+  165 existence_test: EXISTS . subquery
+
+    '('  shift, and go to state 182
+
+    subquery  go to state 183
+
+
+State 128
+
+  136 search_condition: '(' . search_condition ')'
+  176 scalar_exp: '(' . scalar_exp ')'
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 184
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 185
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 129
+
+  125 where_clause: WHERE search_condition .
+  133 search_condition: search_condition . OR search_condition
+  134                 | search_condition . AND search_condition
+
+    OR   shift, and go to state 186
+    AND  shift, and go to state 187
+
+    $default  reduce using rule 125 (where_clause)
+
+
+State 130
+
+  137 search_condition: predicate .
+
+    $default  reduce using rule 137 (search_condition)
+
+
+State 131
+
+  138 predicate: comparison_predicate .
+
+    $default  reduce using rule 138 (predicate)
+
+
+State 132
+
+  139 predicate: between_predicate .
+
+    $default  reduce using rule 139 (predicate)
+
+
+State 133
+
+  140 predicate: like_predicate .
+
+    $default  reduce using rule 140 (predicate)
+
+
+State 134
+
+  141 predicate: test_for_null .
+
+    $default  reduce using rule 141 (predicate)
+
+
+State 135
+
+  142 predicate: in_predicate .
+
+    $default  reduce using rule 142 (predicate)
+
+
+State 136
+
+  143 predicate: all_or_any_predicate .
+
+    $default  reduce using rule 143 (predicate)
+
+
+State 137
+
+  144 predicate: existence_test .
+
+    $default  reduce using rule 144 (predicate)
+
+
+State 138
+
+  145 comparison_predicate: scalar_exp . COMPARISON scalar_exp
+  146                     | scalar_exp . COMPARISON subquery
+  147 between_predicate: scalar_exp . NOT BETWEEN scalar_exp AND scalar_exp
+  148                  | scalar_exp . BETWEEN scalar_exp AND scalar_exp
+  149 like_predicate: scalar_exp . NOT LIKE atom opt_escape
+  150               | scalar_exp . LIKE atom opt_escape
+  155 in_predicate: scalar_exp . NOT IN '(' subquery ')'
+  156             | scalar_exp . IN '(' subquery ')'
+  157             | scalar_exp . NOT IN '(' atom_commalist ')'
+  158             | scalar_exp . IN '(' atom_commalist ')'
+  161 all_or_any_predicate: scalar_exp . COMPARISON any_all_some subquery
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    NOT         shift, and go to state 188
+    COMPARISON  shift, and go to state 189
+    '+'         shift, and go to state 98
+    '-'         shift, and go to state 99
+    '*'         shift, and go to state 100
+    '/'         shift, and go to state 101
+    BETWEEN     shift, and go to state 190
+    IN          shift, and go to state 191
+    LIKE        shift, and go to state 192
+
+
+State 139
+
+  153 test_for_null: column_ref . IS NOT NULLX
+  154              | column_ref . IS NULLX
+  174 scalar_exp: column_ref .
+
+    IS  shift, and go to state 193
+
+    $default  reduce using rule 174 (scalar_exp)
+
+
+State 140
+
+  107 target_commalist: target_commalist ',' . target
+
+    PARAMETER  shift, and go to state 62
+
+    target         go to state 194
+    parameter_ref  go to state 89
+    parameter      go to state 73
+
+
+State 141
+
+   35 column_commalist: column_commalist . ',' column
+   40 opt_column_commalist: '(' column_commalist . ')'
+
+    ')'  shift, and go to state 195
+    ','  shift, and go to state 196
+
+
+State 142
+
+   34 column_commalist: column .
+
+    $default  reduce using rule 34 (column_commalist)
+
+
+State 143
+
+   87 values_or_query_spec: VALUES . '(' insert_atom_commalist ')'
+
+    '('  shift, and go to state 197
+
+
+State 144
+
+   86 insert_statement: INSERT INTO table opt_column_commalist values_or_query_spec .
+
+    $default  reduce using rule 86 (insert_statement)
+
+
+State 145
+
+   88 values_or_query_spec: query_spec .
+
+    $default  reduce using rule 88 (values_or_query_spec)
+
+
+State 146
+
+  195 column_ref: NAME '.' NAME .
+  196           | NAME '.' NAME . '.' NAME
+
+    '.'  shift, and go to state 198
+
+    $default  reduce using rule 195 (column_ref)
+
+
+State 147
+
+  185 function_ref: AMMSC '(' '*' . ')'
+
+    ')'  shift, and go to state 199
+
+
+State 148
+
+  187 function_ref: AMMSC '(' ALL . scalar_exp ')'
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 200
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 149
+
+  186 function_ref: AMMSC '(' DISTINCT . column_ref ')'
+
+    NAME  shift, and go to state 54
+
+    column_ref  go to state 201
+
+
+State 150
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  188 function_ref: AMMSC '(' scalar_exp . ')'
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+    ')'  shift, and go to state 202
+
+
+State 151
+
+  176 scalar_exp: '(' scalar_exp ')' .
+
+    $default  reduce using rule 176 (scalar_exp)
+
+
+State 152
+
+   95 select_statement: SELECT opt_all_distinct selection INTO target_commalist . table_exp
+  107 target_commalist: target_commalist . ',' target
+
+    FROM  shift, and go to state 203
+    ','   shift, and go to state 140
+
+    table_exp    go to state 204
+    from_clause  go to state 205
+
+
+State 153
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  167           | scalar_exp '+' scalar_exp .
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+    $default  reduce using rule 167 (scalar_exp)
+
+
+State 154
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  168           | scalar_exp '-' scalar_exp .
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+    $default  reduce using rule 168 (scalar_exp)
+
+
+State 155
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  169           | scalar_exp '*' scalar_exp .
+  170           | scalar_exp . '/' scalar_exp
+
+    $default  reduce using rule 169 (scalar_exp)
+
+
+State 156
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  170           | scalar_exp '/' scalar_exp .
+
+    $default  reduce using rule 170 (scalar_exp)
+
+
+State 157
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  178 scalar_exp_commalist: scalar_exp_commalist ',' scalar_exp .
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+    $default  reduce using rule 178 (scalar_exp_commalist)
+
+
+State 158
+
+  184 parameter_ref: parameter INDICATOR parameter .
+
+    $default  reduce using rule 184 (parameter_ref)
+
+
+State 159
+
+   99 update_statement_positioned: UPDATE table SET assignment_commalist WHERE . CURRENT OF cursor
+  125 where_clause: WHERE . search_condition
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    CURRENT    shift, and go to state 206
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 129
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 160
+
+  102 assignment_commalist: assignment_commalist ',' . assignment
+
+    NAME  shift, and go to state 106
+
+    assignment  go to state 207
+    column      go to state 109
+
+
+State 161
+
+  105 update_statement_searched: UPDATE table SET assignment_commalist opt_where_clause .
+
+    $default  reduce using rule 105 (update_statement_searched)
+
+
+State 162
+
+  103 assignment: column '=' . scalar_exp
+  104           | column '=' . NULLX
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    NULLX      shift, and go to state 208
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 209
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 163
+
+   12 base_table_def: CREATE TABLE . table '(' base_table_element_commalist ')'
+
+    NAME  shift, and go to state 42
+
+    table  go to state 210
+
+
+State 164
+
+   36 view_def: CREATE VIEW . table opt_column_commalist AS query_spec opt_with_check_option
+
+    NAME  shift, and go to state 42
+
+    table  go to state 211
+
+
+State 165
+
+   44 privileges: ALL . PRIVILEGES
+   45           | ALL .
+
+    PRIVILEGES  shift, and go to state 212
+
+    $default  reduce using rule 45 (privileges)
+
+
+State 166
+
+   51 operation: DELETE .
+
+    $default  reduce using rule 51 (operation)
+
+
+State 167
+
+   50 operation: INSERT .
+
+    $default  reduce using rule 50 (operation)
+
+
+State 168
+
+   53 operation: REFERENCES . opt_column_commalist
+
+    '('  shift, and go to state 90
+
+    $default  reduce using rule 39 (opt_column_commalist)
+
+    opt_column_commalist  go to state 213
+
+
+State 169
+
+   49 operation: SELECT .
+
+    $default  reduce using rule 49 (operation)
+
+
+State 170
+
+   52 operation: UPDATE . opt_column_commalist
+
+    '('  shift, and go to state 90
+
+    $default  reduce using rule 39 (opt_column_commalist)
+
+    opt_column_commalist  go to state 214
+
+
+State 171
+
+   41 privilege_def: GRANT privileges . ON table TO grantee_commalist opt_with_grant_option
+
+    ON  shift, and go to state 215
+
+
+State 172
+
+   46 privileges: operation_commalist .
+   48 operation_commalist: operation_commalist . ',' operation
+
+    ','  shift, and go to state 216
+
+    $default  reduce using rule 46 (privileges)
+
+
+State 173
+
+   47 operation_commalist: operation .
+
+    $default  reduce using rule 47 (operation_commalist)
+
+
+State 174
+
+    8 schema_element_list: schema_element_list schema_element .
+
+    $default  reduce using rule 8 (schema_element_list)
+
+
+State 175
+
+  116 query_spec: SELECT opt_all_distinct . selection table_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    '*'        shift, and go to state 60
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    selection             go to state 217
+    scalar_exp            go to state 66
+    scalar_exp_commalist  go to state 67
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 72
+    parameter             go to state 73
+
+
+State 176
+
+  112 query_exp: query_exp . UNION query_term
+  113          | query_exp . UNION ALL query_term
+  115 query_term: '(' query_exp . ')'
+
+    UNION  shift, and go to state 178
+    ')'    shift, and go to state 218
+
+
+State 177
+
+   61 opt_order_by_clause: ORDER . BY ordering_spec_commalist
+
+    BY  shift, and go to state 219
+
+
+State 178
+
+  112 query_exp: query_exp UNION . query_term
+  113          | query_exp UNION . ALL query_term
+
+    ALL     shift, and go to state 220
+    SELECT  shift, and go to state 120
+    '('     shift, and go to state 121
+
+    query_term  go to state 221
+    query_spec  go to state 124
+
+
+State 179
+
+   59 cursor_def: DECLARE cursor CURSOR FOR query_exp opt_order_by_clause .
+
+    $default  reduce using rule 59 (cursor_def)
+
+
+State 180
+
+  133 search_condition: search_condition . OR search_condition
+  134                 | search_condition . AND search_condition
+  135                 | NOT search_condition .
+
+    $default  reduce using rule 135 (search_condition)
+
+
+State 181
+
+   83 delete_statement_positioned: DELETE FROM table WHERE CURRENT OF . cursor
+
+    NAME  shift, and go to state 29
+
+    cursor  go to state 222
+
+
+State 182
+
+  166 subquery: '(' . SELECT opt_all_distinct selection table_exp ')'
+
+    SELECT  shift, and go to state 223
+
+
+State 183
+
+  165 existence_test: EXISTS subquery .
+
+    $default  reduce using rule 165 (existence_test)
+
+
+State 184
+
+  133 search_condition: search_condition . OR search_condition
+  134                 | search_condition . AND search_condition
+  136                 | '(' search_condition . ')'
+
+    OR   shift, and go to state 186
+    AND  shift, and go to state 187
+    ')'  shift, and go to state 224
+
+
+State 185
+
+  145 comparison_predicate: scalar_exp . COMPARISON scalar_exp
+  146                     | scalar_exp . COMPARISON subquery
+  147 between_predicate: scalar_exp . NOT BETWEEN scalar_exp AND scalar_exp
+  148                  | scalar_exp . BETWEEN scalar_exp AND scalar_exp
+  149 like_predicate: scalar_exp . NOT LIKE atom opt_escape
+  150               | scalar_exp . LIKE atom opt_escape
+  155 in_predicate: scalar_exp . NOT IN '(' subquery ')'
+  156             | scalar_exp . IN '(' subquery ')'
+  157             | scalar_exp . NOT IN '(' atom_commalist ')'
+  158             | scalar_exp . IN '(' atom_commalist ')'
+  161 all_or_any_predicate: scalar_exp . COMPARISON any_all_some subquery
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  176           | '(' scalar_exp . ')'
+
+    NOT         shift, and go to state 188
+    COMPARISON  shift, and go to state 189
+    '+'         shift, and go to state 98
+    '-'         shift, and go to state 99
+    '*'         shift, and go to state 100
+    '/'         shift, and go to state 101
+    BETWEEN     shift, and go to state 190
+    IN          shift, and go to state 191
+    LIKE        shift, and go to state 192
+    ')'         shift, and go to state 151
+
+
+State 186
+
+  133 search_condition: search_condition OR . search_condition
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 225
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 187
+
+  134 search_condition: search_condition AND . search_condition
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 226
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 188
+
+  147 between_predicate: scalar_exp NOT . BETWEEN scalar_exp AND scalar_exp
+  149 like_predicate: scalar_exp NOT . LIKE atom opt_escape
+  155 in_predicate: scalar_exp NOT . IN '(' subquery ')'
+  157             | scalar_exp NOT . IN '(' atom_commalist ')'
+
+    BETWEEN  shift, and go to state 227
+    IN       shift, and go to state 228
+    LIKE     shift, and go to state 229
+
+
+State 189
+
+  145 comparison_predicate: scalar_exp COMPARISON . scalar_exp
+  146                     | scalar_exp COMPARISON . subquery
+  161 all_or_any_predicate: scalar_exp COMPARISON . any_all_some subquery
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    ALL        shift, and go to state 230
+    AMMSC      shift, and go to state 61
+    ANY        shift, and go to state 231
+    PARAMETER  shift, and go to state 62
+    SOME       shift, and go to state 232
+    USER       shift, and go to state 63
+    '('        shift, and go to state 233
+
+    any_all_some   go to state 234
+    subquery       go to state 235
+    scalar_exp     go to state 236
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 190
+
+  148 between_predicate: scalar_exp BETWEEN . scalar_exp AND scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 237
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 191
+
+  156 in_predicate: scalar_exp IN . '(' subquery ')'
+  158             | scalar_exp IN . '(' atom_commalist ')'
+
+    '('  shift, and go to state 238
+
+
+State 192
+
+  150 like_predicate: scalar_exp LIKE . atom opt_escape
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+
+    atom           go to state 239
+    parameter_ref  go to state 69
+    literal        go to state 71
+    parameter      go to state 73
+
+
+State 193
+
+  153 test_for_null: column_ref IS . NOT NULLX
+  154              | column_ref IS . NULLX
+
+    NOT    shift, and go to state 240
+    NULLX  shift, and go to state 241
+
+
+State 194
+
+  107 target_commalist: target_commalist ',' target .
+
+    $default  reduce using rule 107 (target_commalist)
+
+
+State 195
+
+   40 opt_column_commalist: '(' column_commalist ')' .
+
+    $default  reduce using rule 40 (opt_column_commalist)
+
+
+State 196
+
+   35 column_commalist: column_commalist ',' . column
+
+    NAME  shift, and go to state 106
+
+    column  go to state 242
+
+
+State 197
+
+   87 values_or_query_spec: VALUES '(' . insert_atom_commalist ')'
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NULLX      shift, and go to state 243
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+
+    insert_atom_commalist  go to state 244
+    insert_atom            go to state 245
+    atom                   go to state 246
+    parameter_ref          go to state 69
+    literal                go to state 71
+    parameter              go to state 73
+
+
+State 198
+
+  196 column_ref: NAME '.' NAME '.' . NAME
+
+    NAME  shift, and go to state 247
+
+
+State 199
+
+  185 function_ref: AMMSC '(' '*' ')' .
+
+    $default  reduce using rule 185 (function_ref)
+
+
+State 200
+
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+  187 function_ref: AMMSC '(' ALL scalar_exp . ')'
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+    ')'  shift, and go to state 248
+
+
+State 201
+
+  186 function_ref: AMMSC '(' DISTINCT column_ref . ')'
+
+    ')'  shift, and go to state 249
+
+
+State 202
+
+  188 function_ref: AMMSC '(' scalar_exp ')' .
+
+    $default  reduce using rule 188 (function_ref)
+
+
+State 203
+
+  120 from_clause: FROM . table_ref_commalist
+
+    NAME  shift, and go to state 42
+
+    table_ref_commalist  go to state 250
+    table_ref            go to state 251
+    table                go to state 252
+
+
+State 204
+
+   95 select_statement: SELECT opt_all_distinct selection INTO target_commalist table_exp .
+
+    $default  reduce using rule 95 (select_statement)
+
+
+State 205
+
+  119 table_exp: from_clause . opt_where_clause opt_group_by_clause opt_having_clause
+
+    WHERE  shift, and go to state 253
+
+    $default  reduce using rule 109 (opt_where_clause)
+
+    opt_where_clause  go to state 254
+    where_clause      go to state 86
+
+
+State 206
+
+   99 update_statement_positioned: UPDATE table SET assignment_commalist WHERE CURRENT . OF cursor
+
+    OF  shift, and go to state 255
+
+
+State 207
+
+  102 assignment_commalist: assignment_commalist ',' assignment .
+
+    $default  reduce using rule 102 (assignment_commalist)
+
+
+State 208
+
+  104 assignment: column '=' NULLX .
+
+    $default  reduce using rule 104 (assignment)
+
+
+State 209
+
+  103 assignment: column '=' scalar_exp .
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+    $default  reduce using rule 103 (assignment)
+
+
+State 210
+
+   12 base_table_def: CREATE TABLE table . '(' base_table_element_commalist ')'
+
+    '('  shift, and go to state 256
+
+
+State 211
+
+   36 view_def: CREATE VIEW table . opt_column_commalist AS query_spec opt_with_check_option
+
+    '('  shift, and go to state 90
+
+    $default  reduce using rule 39 (opt_column_commalist)
+
+    opt_column_commalist  go to state 257
+
+
+State 212
+
+   44 privileges: ALL PRIVILEGES .
+
+    $default  reduce using rule 44 (privileges)
+
+
+State 213
+
+   53 operation: REFERENCES opt_column_commalist .
+
+    $default  reduce using rule 53 (operation)
+
+
+State 214
+
+   52 operation: UPDATE opt_column_commalist .
+
+    $default  reduce using rule 52 (operation)
+
+
+State 215
+
+   41 privilege_def: GRANT privileges ON . table TO grantee_commalist opt_with_grant_option
+
+    NAME  shift, and go to state 42
+
+    table  go to state 258
+
+
+State 216
+
+   48 operation_commalist: operation_commalist ',' . operation
+
+    DELETE      shift, and go to state 166
+    INSERT      shift, and go to state 167
+    REFERENCES  shift, and go to state 168
+    SELECT      shift, and go to state 169
+    UPDATE      shift, and go to state 170
+
+    operation  go to state 259
+
+
+State 217
+
+  116 query_spec: SELECT opt_all_distinct selection . table_exp
+
+    FROM  shift, and go to state 203
+
+    table_exp    go to state 260
+    from_clause  go to state 205
+
+
+State 218
+
+  115 query_term: '(' query_exp ')' .
+
+    $default  reduce using rule 115 (query_term)
+
+
+State 219
+
+   61 opt_order_by_clause: ORDER BY . ordering_spec_commalist
+
+    NAME    shift, and go to state 54
+    INTNUM  shift, and go to state 261
+
+    ordering_spec_commalist  go to state 262
+    ordering_spec            go to state 263
+    column_ref               go to state 264
+
+
+State 220
+
+  113 query_exp: query_exp UNION ALL . query_term
+
+    SELECT  shift, and go to state 120
+    '('     shift, and go to state 121
+
+    query_term  go to state 265
+    query_spec  go to state 124
+
+
+State 221
+
+  112 query_exp: query_exp UNION query_term .
+
+    $default  reduce using rule 112 (query_exp)
+
+
+State 222
+
+   83 delete_statement_positioned: DELETE FROM table WHERE CURRENT OF cursor .
+
+    $default  reduce using rule 83 (delete_statement_positioned)
+
+
+State 223
+
+  166 subquery: '(' SELECT . opt_all_distinct selection table_exp ')'
+
+    ALL       shift, and go to state 39
+    DISTINCT  shift, and go to state 40
+
+    $default  reduce using rule 96 (opt_all_distinct)
+
+    opt_all_distinct  go to state 266
+
+
+State 224
+
+  136 search_condition: '(' search_condition ')' .
+
+    $default  reduce using rule 136 (search_condition)
+
+
+State 225
+
+  133 search_condition: search_condition . OR search_condition
+  133                 | search_condition OR search_condition .
+  134                 | search_condition . AND search_condition
+
+    AND  shift, and go to state 187
+
+    $default  reduce using rule 133 (search_condition)
+
+
+State 226
+
+  133 search_condition: search_condition . OR search_condition
+  134                 | search_condition . AND search_condition
+  134                 | search_condition AND search_condition .
+
+    $default  reduce using rule 134 (search_condition)
+
+
+State 227
+
+  147 between_predicate: scalar_exp NOT BETWEEN . scalar_exp AND scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 267
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 228
+
+  155 in_predicate: scalar_exp NOT IN . '(' subquery ')'
+  157             | scalar_exp NOT IN . '(' atom_commalist ')'
+
+    '('  shift, and go to state 268
+
+
+State 229
+
+  149 like_predicate: scalar_exp NOT LIKE . atom opt_escape
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+
+    atom           go to state 269
+    parameter_ref  go to state 69
+    literal        go to state 71
+    parameter      go to state 73
+
+
+State 230
+
+  163 any_all_some: ALL .
+
+    $default  reduce using rule 163 (any_all_some)
+
+
+State 231
+
+  162 any_all_some: ANY .
+
+    $default  reduce using rule 162 (any_all_some)
+
+
+State 232
+
+  164 any_all_some: SOME .
+
+    $default  reduce using rule 164 (any_all_some)
+
+
+State 233
+
+  166 subquery: '(' . SELECT opt_all_distinct selection table_exp ')'
+  176 scalar_exp: '(' . scalar_exp ')'
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    SELECT     shift, and go to state 223
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 96
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 234
+
+  161 all_or_any_predicate: scalar_exp COMPARISON any_all_some . subquery
+
+    '('  shift, and go to state 182
+
+    subquery  go to state 270
+
+
+State 235
+
+  146 comparison_predicate: scalar_exp COMPARISON subquery .
+
+    $default  reduce using rule 146 (comparison_predicate)
+
+
+State 236
+
+  145 comparison_predicate: scalar_exp COMPARISON scalar_exp .
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+    $default  reduce using rule 145 (comparison_predicate)
+
+
+State 237
+
+  148 between_predicate: scalar_exp BETWEEN scalar_exp . AND scalar_exp
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    AND  shift, and go to state 271
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+
+State 238
+
+  156 in_predicate: scalar_exp IN '(' . subquery ')'
+  158             | scalar_exp IN '(' . atom_commalist ')'
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 182
+
+    atom_commalist  go to state 272
+    subquery        go to state 273
+    atom            go to state 274
+    parameter_ref   go to state 69
+    literal         go to state 71
+    parameter       go to state 73
+
+
+State 239
+
+  150 like_predicate: scalar_exp LIKE atom . opt_escape
+
+    ESCAPE  shift, and go to state 275
+
+    $default  reduce using rule 151 (opt_escape)
+
+    opt_escape  go to state 276
+
+
+State 240
+
+  153 test_for_null: column_ref IS NOT . NULLX
+
+    NULLX  shift, and go to state 277
+
+
+State 241
+
+  154 test_for_null: column_ref IS NULLX .
+
+    $default  reduce using rule 154 (test_for_null)
+
+
+State 242
+
+   35 column_commalist: column_commalist ',' column .
+
+    $default  reduce using rule 35 (column_commalist)
+
+
+State 243
+
+   92 insert_atom: NULLX .
+
+    $default  reduce using rule 92 (insert_atom)
+
+
+State 244
+
+   87 values_or_query_spec: VALUES '(' insert_atom_commalist . ')'
+   90 insert_atom_commalist: insert_atom_commalist . ',' insert_atom
+
+    ')'  shift, and go to state 278
+    ','  shift, and go to state 279
+
+
+State 245
+
+   89 insert_atom_commalist: insert_atom .
+
+    $default  reduce using rule 89 (insert_atom_commalist)
+
+
+State 246
+
+   91 insert_atom: atom .
+
+    $default  reduce using rule 91 (insert_atom)
+
+
+State 247
+
+  196 column_ref: NAME '.' NAME '.' NAME .
+
+    $default  reduce using rule 196 (column_ref)
+
+
+State 248
+
+  187 function_ref: AMMSC '(' ALL scalar_exp ')' .
+
+    $default  reduce using rule 187 (function_ref)
+
+
+State 249
+
+  186 function_ref: AMMSC '(' DISTINCT column_ref ')' .
+
+    $default  reduce using rule 186 (function_ref)
+
+
+State 250
+
+  120 from_clause: FROM table_ref_commalist .
+  122 table_ref_commalist: table_ref_commalist . ',' table_ref
+
+    ','  shift, and go to state 280
+
+    $default  reduce using rule 120 (from_clause)
+
+
+State 251
+
+  121 table_ref_commalist: table_ref .
+
+    $default  reduce using rule 121 (table_ref_commalist)
+
+
+State 252
+
+  123 table_ref: table .
+  124          | table . range_variable
+
+    NAME  shift, and go to state 281
+
+    $default  reduce using rule 123 (table_ref)
+
+    range_variable  go to state 282
+
+
+State 253
+
+  125 where_clause: WHERE . search_condition
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 129
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 254
+
+  119 table_exp: from_clause opt_where_clause . opt_group_by_clause opt_having_clause
+
+    GROUP  shift, and go to state 283
+
+    $default  reduce using rule 126 (opt_group_by_clause)
+
+    opt_group_by_clause  go to state 284
+
+
+State 255
+
+   99 update_statement_positioned: UPDATE table SET assignment_commalist WHERE CURRENT OF . cursor
+
+    NAME  shift, and go to state 29
+
+    cursor  go to state 285
+
+
+State 256
+
+   12 base_table_def: CREATE TABLE table '(' . base_table_element_commalist ')'
+
+    NAME     shift, and go to state 106
+    CHECK    shift, and go to state 286
+    FOREIGN  shift, and go to state 287
+    PRIMARY  shift, and go to state 288
+    UNIQUE   shift, and go to state 289
+
+    base_table_element_commalist  go to state 290
+    base_table_element            go to state 291
+    column_def                    go to state 292
+    table_constraint_def          go to state 293
+    column                        go to state 294
+
+
+State 257
+
+   36 view_def: CREATE VIEW table opt_column_commalist . AS query_spec opt_with_check_option
+
+    AS  shift, and go to state 295
+
+
+State 258
+
+   41 privilege_def: GRANT privileges ON table . TO grantee_commalist opt_with_grant_option
+
+    TO  shift, and go to state 296
+
+
+State 259
+
+   48 operation_commalist: operation_commalist ',' operation .
+
+    $default  reduce using rule 48 (operation_commalist)
+
+
+State 260
+
+  116 query_spec: SELECT opt_all_distinct selection table_exp .
+
+    $default  reduce using rule 116 (query_spec)
+
+
+State 261
+
+   64 ordering_spec: INTNUM . opt_asc_desc
+
+    ASC   shift, and go to state 297
+    DESC  shift, and go to state 298
+
+    $default  reduce using rule 66 (opt_asc_desc)
+
+    opt_asc_desc  go to state 299
+
+
+State 262
+
+   61 opt_order_by_clause: ORDER BY ordering_spec_commalist .
+   63 ordering_spec_commalist: ordering_spec_commalist . ',' ordering_spec
+
+    ','  shift, and go to state 300
+
+    $default  reduce using rule 61 (opt_order_by_clause)
+
+
+State 263
+
+   62 ordering_spec_commalist: ordering_spec .
+
+    $default  reduce using rule 62 (ordering_spec_commalist)
+
+
+State 264
+
+   65 ordering_spec: column_ref . opt_asc_desc
+
+    ASC   shift, and go to state 297
+    DESC  shift, and go to state 298
+
+    $default  reduce using rule 66 (opt_asc_desc)
+
+    opt_asc_desc  go to state 301
+
+
+State 265
+
+  113 query_exp: query_exp UNION ALL query_term .
+
+    $default  reduce using rule 113 (query_exp)
+
+
+State 266
+
+  166 subquery: '(' SELECT opt_all_distinct . selection table_exp ')'
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    '*'        shift, and go to state 60
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    selection             go to state 302
+    scalar_exp            go to state 66
+    scalar_exp_commalist  go to state 67
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 72
+    parameter             go to state 73
+
+
+State 267
+
+  147 between_predicate: scalar_exp NOT BETWEEN scalar_exp . AND scalar_exp
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    AND  shift, and go to state 303
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+
+State 268
+
+  155 in_predicate: scalar_exp NOT IN '(' . subquery ')'
+  157             | scalar_exp NOT IN '(' . atom_commalist ')'
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 182
+
+    atom_commalist  go to state 304
+    subquery        go to state 305
+    atom            go to state 274
+    parameter_ref   go to state 69
+    literal         go to state 71
+    parameter       go to state 73
+
+
+State 269
+
+  149 like_predicate: scalar_exp NOT LIKE atom . opt_escape
+
+    ESCAPE  shift, and go to state 275
+
+    $default  reduce using rule 151 (opt_escape)
+
+    opt_escape  go to state 306
+
+
+State 270
+
+  161 all_or_any_predicate: scalar_exp COMPARISON any_all_some subquery .
+
+    $default  reduce using rule 161 (all_or_any_predicate)
+
+
+State 271
+
+  148 between_predicate: scalar_exp BETWEEN scalar_exp AND . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 307
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 272
+
+  158 in_predicate: scalar_exp IN '(' atom_commalist . ')'
+  160 atom_commalist: atom_commalist . ',' atom
+
+    ')'  shift, and go to state 308
+    ','  shift, and go to state 309
+
+
+State 273
+
+  156 in_predicate: scalar_exp IN '(' subquery . ')'
+
+    ')'  shift, and go to state 310
+
+
+State 274
+
+  159 atom_commalist: atom .
+
+    $default  reduce using rule 159 (atom_commalist)
+
+
+State 275
+
+  152 opt_escape: ESCAPE . atom
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+
+    atom           go to state 311
+    parameter_ref  go to state 69
+    literal        go to state 71
+    parameter      go to state 73
+
+
+State 276
+
+  150 like_predicate: scalar_exp LIKE atom opt_escape .
+
+    $default  reduce using rule 150 (like_predicate)
+
+
+State 277
+
+  153 test_for_null: column_ref IS NOT NULLX .
+
+    $default  reduce using rule 153 (test_for_null)
+
+
+State 278
+
+   87 values_or_query_spec: VALUES '(' insert_atom_commalist ')' .
+
+    $default  reduce using rule 87 (values_or_query_spec)
+
+
+State 279
+
+   90 insert_atom_commalist: insert_atom_commalist ',' . insert_atom
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NULLX      shift, and go to state 243
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+
+    insert_atom    go to state 312
+    atom           go to state 246
+    parameter_ref  go to state 69
+    literal        go to state 71
+    parameter      go to state 73
+
+
+State 280
+
+  122 table_ref_commalist: table_ref_commalist ',' . table_ref
+
+    NAME  shift, and go to state 42
+
+    table_ref  go to state 313
+    table      go to state 252
+
+
+State 281
+
+  214 range_variable: NAME .
+
+    $default  reduce using rule 214 (range_variable)
+
+
+State 282
+
+  124 table_ref: table range_variable .
+
+    $default  reduce using rule 124 (table_ref)
+
+
+State 283
+
+  127 opt_group_by_clause: GROUP . BY column_ref_commalist
+
+    BY  shift, and go to state 314
+
+
+State 284
+
+  119 table_exp: from_clause opt_where_clause opt_group_by_clause . opt_having_clause
+
+    HAVING  shift, and go to state 315
+
+    $default  reduce using rule 130 (opt_having_clause)
+
+    opt_having_clause  go to state 316
+
+
+State 285
+
+   99 update_statement_positioned: UPDATE table SET assignment_commalist WHERE CURRENT OF cursor .
+
+    $default  reduce using rule 99 (update_statement_positioned)
+
+
+State 286
+
+   33 table_constraint_def: CHECK . '(' search_condition ')'
+
+    '('  shift, and go to state 317
+
+
+State 287
+
+   31 table_constraint_def: FOREIGN . KEY '(' column_commalist ')' REFERENCES table
+   32                     | FOREIGN . KEY '(' column_commalist ')' REFERENCES table '(' column_commalist ')'
+
+    KEY  shift, and go to state 318
+
+
+State 288
+
+   30 table_constraint_def: PRIMARY . KEY '(' column_commalist ')'
+
+    KEY  shift, and go to state 319
+
+
+State 289
+
+   29 table_constraint_def: UNIQUE . '(' column_commalist ')'
+
+    '('  shift, and go to state 320
+
+
+State 290
+
+   12 base_table_def: CREATE TABLE table '(' base_table_element_commalist . ')'
+   14 base_table_element_commalist: base_table_element_commalist . ',' base_table_element
+
+    ')'  shift, and go to state 321
+    ','  shift, and go to state 322
+
+
+State 291
+
+   13 base_table_element_commalist: base_table_element .
+
+    $default  reduce using rule 13 (base_table_element_commalist)
+
+
+State 292
+
+   15 base_table_element: column_def .
+
+    $default  reduce using rule 15 (base_table_element)
+
+
+State 293
+
+   16 base_table_element: table_constraint_def .
+
+    $default  reduce using rule 16 (base_table_element)
+
+
+State 294
+
+   17 column_def: column . data_type column_def_opt_list
+
+    CHARACTER  shift, and go to state 323
+    DECIMAL    shift, and go to state 324
+    DOUBLE     shift, and go to state 325
+    FLOAT      shift, and go to state 326
+    INTEGER    shift, and go to state 327
+    NUMERIC    shift, and go to state 328
+    REAL       shift, and go to state 329
+    SMALLINT   shift, and go to state 330
+
+    data_type  go to state 331
+
+
+State 295
+
+   36 view_def: CREATE VIEW table opt_column_commalist AS . query_spec opt_with_check_option
+
+    SELECT  shift, and go to state 120
+
+    query_spec  go to state 332
+
+
+State 296
+
+   41 privilege_def: GRANT privileges ON table TO . grantee_commalist opt_with_grant_option
+
+    NAME    shift, and go to state 81
+    PUBLIC  shift, and go to state 333
+
+    grantee_commalist  go to state 334
+    grantee            go to state 335
+    user               go to state 336
+
+
+State 297
+
+   67 opt_asc_desc: ASC .
+
+    $default  reduce using rule 67 (opt_asc_desc)
+
+
+State 298
+
+   68 opt_asc_desc: DESC .
+
+    $default  reduce using rule 68 (opt_asc_desc)
+
+
+State 299
+
+   64 ordering_spec: INTNUM opt_asc_desc .
+
+    $default  reduce using rule 64 (ordering_spec)
+
+
+State 300
+
+   63 ordering_spec_commalist: ordering_spec_commalist ',' . ordering_spec
+
+    NAME    shift, and go to state 54
+    INTNUM  shift, and go to state 261
+
+    ordering_spec  go to state 337
+    column_ref     go to state 264
+
+
+State 301
+
+   65 ordering_spec: column_ref opt_asc_desc .
+
+    $default  reduce using rule 65 (ordering_spec)
+
+
+State 302
+
+  166 subquery: '(' SELECT opt_all_distinct selection . table_exp ')'
+
+    FROM  shift, and go to state 203
+
+    table_exp    go to state 338
+    from_clause  go to state 205
+
+
+State 303
+
+  147 between_predicate: scalar_exp NOT BETWEEN scalar_exp AND . scalar_exp
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 64
+
+    scalar_exp     go to state 339
+    atom           go to state 68
+    parameter_ref  go to state 69
+    function_ref   go to state 70
+    literal        go to state 71
+    column_ref     go to state 72
+    parameter      go to state 73
+
+
+State 304
+
+  157 in_predicate: scalar_exp NOT IN '(' atom_commalist . ')'
+  160 atom_commalist: atom_commalist . ',' atom
+
+    ')'  shift, and go to state 340
+    ','  shift, and go to state 309
+
+
+State 305
+
+  155 in_predicate: scalar_exp NOT IN '(' subquery . ')'
+
+    ')'  shift, and go to state 341
+
+
+State 306
+
+  149 like_predicate: scalar_exp NOT LIKE atom opt_escape .
+
+    $default  reduce using rule 149 (like_predicate)
+
+
+State 307
+
+  148 between_predicate: scalar_exp BETWEEN scalar_exp AND scalar_exp .
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+    $default  reduce using rule 148 (between_predicate)
+
+
+State 308
+
+  158 in_predicate: scalar_exp IN '(' atom_commalist ')' .
+
+    $default  reduce using rule 158 (in_predicate)
+
+
+State 309
+
+  160 atom_commalist: atom_commalist ',' . atom
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+
+    atom           go to state 342
+    parameter_ref  go to state 69
+    literal        go to state 71
+    parameter      go to state 73
+
+
+State 310
+
+  156 in_predicate: scalar_exp IN '(' subquery ')' .
+
+    $default  reduce using rule 156 (in_predicate)
+
+
+State 311
+
+  152 opt_escape: ESCAPE atom .
+
+    $default  reduce using rule 152 (opt_escape)
+
+
+State 312
+
+   90 insert_atom_commalist: insert_atom_commalist ',' insert_atom .
+
+    $default  reduce using rule 90 (insert_atom_commalist)
+
+
+State 313
+
+  122 table_ref_commalist: table_ref_commalist ',' table_ref .
+
+    $default  reduce using rule 122 (table_ref_commalist)
+
+
+State 314
+
+  127 opt_group_by_clause: GROUP BY . column_ref_commalist
+
+    NAME  shift, and go to state 54
+
+    column_ref_commalist  go to state 343
+    column_ref            go to state 344
+
+
+State 315
+
+  131 opt_having_clause: HAVING . search_condition
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 345
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 316
+
+  119 table_exp: from_clause opt_where_clause opt_group_by_clause opt_having_clause .
+
+    $default  reduce using rule 119 (table_exp)
+
+
+State 317
+
+   33 table_constraint_def: CHECK '(' . search_condition ')'
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 346
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 318
+
+   31 table_constraint_def: FOREIGN KEY . '(' column_commalist ')' REFERENCES table
+   32                     | FOREIGN KEY . '(' column_commalist ')' REFERENCES table '(' column_commalist ')'
+
+    '('  shift, and go to state 347
+
+
+State 319
+
+   30 table_constraint_def: PRIMARY KEY . '(' column_commalist ')'
+
+    '('  shift, and go to state 348
+
+
+State 320
+
+   29 table_constraint_def: UNIQUE '(' . column_commalist ')'
+
+    NAME  shift, and go to state 106
+
+    column_commalist  go to state 349
+    column            go to state 142
+
+
+State 321
+
+   12 base_table_def: CREATE TABLE table '(' base_table_element_commalist ')' .
+
+    $default  reduce using rule 12 (base_table_def)
+
+
+State 322
+
+   14 base_table_element_commalist: base_table_element_commalist ',' . base_table_element
+
+    NAME     shift, and go to state 106
+    CHECK    shift, and go to state 286
+    FOREIGN  shift, and go to state 287
+    PRIMARY  shift, and go to state 288
+    UNIQUE   shift, and go to state 289
+
+    base_table_element    go to state 350
+    column_def            go to state 292
+    table_constraint_def  go to state 293
+    column                go to state 294
+
+
+State 323
+
+  197 data_type: CHARACTER .
+  198          | CHARACTER . '(' INTNUM ')'
+
+    '('  shift, and go to state 351
+
+    $default  reduce using rule 197 (data_type)
+
+
+State 324
+
+  202 data_type: DECIMAL .
+  203          | DECIMAL . '(' INTNUM ')'
+  204          | DECIMAL . '(' INTNUM ',' INTNUM ')'
+
+    '('  shift, and go to state 352
+
+    $default  reduce using rule 202 (data_type)
+
+
+State 325
+
+  210 data_type: DOUBLE . PRECISION
+
+    PRECISION  shift, and go to state 353
+
+
+State 326
+
+  207 data_type: FLOAT .
+  208          | FLOAT . '(' INTNUM ')'
+
+    '('  shift, and go to state 354
+
+    $default  reduce using rule 207 (data_type)
+
+
+State 327
+
+  205 data_type: INTEGER .
+
+    $default  reduce using rule 205 (data_type)
+
+
+State 328
+
+  199 data_type: NUMERIC .
+  200          | NUMERIC . '(' INTNUM ')'
+  201          | NUMERIC . '(' INTNUM ',' INTNUM ')'
+
+    '('  shift, and go to state 355
+
+    $default  reduce using rule 199 (data_type)
+
+
+State 329
+
+  209 data_type: REAL .
+
+    $default  reduce using rule 209 (data_type)
+
+
+State 330
+
+  206 data_type: SMALLINT .
+
+    $default  reduce using rule 206 (data_type)
+
+
+State 331
+
+   17 column_def: column data_type . column_def_opt_list
+
+    $default  reduce using rule 18 (column_def_opt_list)
+
+    column_def_opt_list  go to state 356
+
+
+State 332
+
+   36 view_def: CREATE VIEW table opt_column_commalist AS query_spec . opt_with_check_option
+
+    WITH  shift, and go to state 357
+
+    $default  reduce using rule 37 (opt_with_check_option)
+
+    opt_with_check_option  go to state 358
+
+
+State 333
+
+   56 grantee: PUBLIC .
+
+    $default  reduce using rule 56 (grantee)
+
+
+State 334
+
+   41 privilege_def: GRANT privileges ON table TO grantee_commalist . opt_with_grant_option
+   55 grantee_commalist: grantee_commalist . ',' grantee
+
+    WITH  shift, and go to state 359
+    ','   shift, and go to state 360
+
+    $default  reduce using rule 42 (opt_with_grant_option)
+
+    opt_with_grant_option  go to state 361
+
+
+State 335
+
+   54 grantee_commalist: grantee .
+
+    $default  reduce using rule 54 (grantee_commalist)
+
+
+State 336
+
+   57 grantee: user .
+
+    $default  reduce using rule 57 (grantee)
+
+
+State 337
+
+   63 ordering_spec_commalist: ordering_spec_commalist ',' ordering_spec .
+
+    $default  reduce using rule 63 (ordering_spec_commalist)
+
+
+State 338
+
+  166 subquery: '(' SELECT opt_all_distinct selection table_exp . ')'
+
+    ')'  shift, and go to state 362
+
+
+State 339
+
+  147 between_predicate: scalar_exp NOT BETWEEN scalar_exp AND scalar_exp .
+  167 scalar_exp: scalar_exp . '+' scalar_exp
+  168           | scalar_exp . '-' scalar_exp
+  169           | scalar_exp . '*' scalar_exp
+  170           | scalar_exp . '/' scalar_exp
+
+    '+'  shift, and go to state 98
+    '-'  shift, and go to state 99
+    '*'  shift, and go to state 100
+    '/'  shift, and go to state 101
+
+    $default  reduce using rule 147 (between_predicate)
+
+
+State 340
+
+  157 in_predicate: scalar_exp NOT IN '(' atom_commalist ')' .
+
+    $default  reduce using rule 157 (in_predicate)
+
+
+State 341
+
+  155 in_predicate: scalar_exp NOT IN '(' subquery ')' .
+
+    $default  reduce using rule 155 (in_predicate)
+
+
+State 342
+
+  160 atom_commalist: atom_commalist ',' atom .
+
+    $default  reduce using rule 160 (atom_commalist)
+
+
+State 343
+
+  127 opt_group_by_clause: GROUP BY column_ref_commalist .
+  129 column_ref_commalist: column_ref_commalist . ',' column_ref
+
+    ','  shift, and go to state 363
+
+    $default  reduce using rule 127 (opt_group_by_clause)
+
+
+State 344
+
+  128 column_ref_commalist: column_ref .
+
+    $default  reduce using rule 128 (column_ref_commalist)
+
+
+State 345
+
+  131 opt_having_clause: HAVING search_condition .
+  133 search_condition: search_condition . OR search_condition
+  134                 | search_condition . AND search_condition
+
+    OR   shift, and go to state 186
+    AND  shift, and go to state 187
+
+    $default  reduce using rule 131 (opt_having_clause)
+
+
+State 346
+
+   33 table_constraint_def: CHECK '(' search_condition . ')'
+  133 search_condition: search_condition . OR search_condition
+  134                 | search_condition . AND search_condition
+
+    OR   shift, and go to state 186
+    AND  shift, and go to state 187
+    ')'  shift, and go to state 364
+
+
+State 347
+
+   31 table_constraint_def: FOREIGN KEY '(' . column_commalist ')' REFERENCES table
+   32                     | FOREIGN KEY '(' . column_commalist ')' REFERENCES table '(' column_commalist ')'
+
+    NAME  shift, and go to state 106
+
+    column_commalist  go to state 365
+    column            go to state 142
+
+
+State 348
+
+   30 table_constraint_def: PRIMARY KEY '(' . column_commalist ')'
+
+    NAME  shift, and go to state 106
+
+    column_commalist  go to state 366
+    column            go to state 142
+
+
+State 349
+
+   29 table_constraint_def: UNIQUE '(' column_commalist . ')'
+   35 column_commalist: column_commalist . ',' column
+
+    ')'  shift, and go to state 367
+    ','  shift, and go to state 196
+
+
+State 350
+
+   14 base_table_element_commalist: base_table_element_commalist ',' base_table_element .
+
+    $default  reduce using rule 14 (base_table_element_commalist)
+
+
+State 351
+
+  198 data_type: CHARACTER '(' . INTNUM ')'
+
+    INTNUM  shift, and go to state 368
+
+
+State 352
+
+  203 data_type: DECIMAL '(' . INTNUM ')'
+  204          | DECIMAL '(' . INTNUM ',' INTNUM ')'
+
+    INTNUM  shift, and go to state 369
+
+
+State 353
+
+  210 data_type: DOUBLE PRECISION .
+
+    $default  reduce using rule 210 (data_type)
+
+
+State 354
+
+  208 data_type: FLOAT '(' . INTNUM ')'
+
+    INTNUM  shift, and go to state 370
+
+
+State 355
+
+  200 data_type: NUMERIC '(' . INTNUM ')'
+  201          | NUMERIC '(' . INTNUM ',' INTNUM ')'
+
+    INTNUM  shift, and go to state 371
+
+
+State 356
+
+   17 column_def: column data_type column_def_opt_list .
+   19 column_def_opt_list: column_def_opt_list . column_def_opt
+
+    NOT         shift, and go to state 372
+    CHECK       shift, and go to state 373
+    DEFAULT     shift, and go to state 374
+    REFERENCES  shift, and go to state 375
+
+    $default  reduce using rule 17 (column_def)
+
+    column_def_opt  go to state 376
+
+
+State 357
+
+   38 opt_with_check_option: WITH . CHECK OPTION
+
+    CHECK  shift, and go to state 377
+
+
+State 358
+
+   36 view_def: CREATE VIEW table opt_column_commalist AS query_spec opt_with_check_option .
+
+    $default  reduce using rule 36 (view_def)
+
+
+State 359
+
+   43 opt_with_grant_option: WITH . GRANT OPTION
+
+    GRANT  shift, and go to state 378
+
+
+State 360
+
+   55 grantee_commalist: grantee_commalist ',' . grantee
+
+    NAME    shift, and go to state 81
+    PUBLIC  shift, and go to state 333
+
+    grantee  go to state 379
+    user     go to state 336
+
+
+State 361
+
+   41 privilege_def: GRANT privileges ON table TO grantee_commalist opt_with_grant_option .
+
+    $default  reduce using rule 41 (privilege_def)
+
+
+State 362
+
+  166 subquery: '(' SELECT opt_all_distinct selection table_exp ')' .
+
+    $default  reduce using rule 166 (subquery)
+
+
+State 363
+
+  129 column_ref_commalist: column_ref_commalist ',' . column_ref
+
+    NAME  shift, and go to state 54
+
+    column_ref  go to state 380
+
+
+State 364
+
+   33 table_constraint_def: CHECK '(' search_condition ')' .
+
+    $default  reduce using rule 33 (table_constraint_def)
+
+
+State 365
+
+   31 table_constraint_def: FOREIGN KEY '(' column_commalist . ')' REFERENCES table
+   32                     | FOREIGN KEY '(' column_commalist . ')' REFERENCES table '(' column_commalist ')'
+   35 column_commalist: column_commalist . ',' column
+
+    ')'  shift, and go to state 381
+    ','  shift, and go to state 196
+
+
+State 366
+
+   30 table_constraint_def: PRIMARY KEY '(' column_commalist . ')'
+   35 column_commalist: column_commalist . ',' column
+
+    ')'  shift, and go to state 382
+    ','  shift, and go to state 196
+
+
+State 367
+
+   29 table_constraint_def: UNIQUE '(' column_commalist ')' .
+
+    $default  reduce using rule 29 (table_constraint_def)
+
+
+State 368
+
+  198 data_type: CHARACTER '(' INTNUM . ')'
+
+    ')'  shift, and go to state 383
+
+
+State 369
+
+  203 data_type: DECIMAL '(' INTNUM . ')'
+  204          | DECIMAL '(' INTNUM . ',' INTNUM ')'
+
+    ')'  shift, and go to state 384
+    ','  shift, and go to state 385
+
+
+State 370
+
+  208 data_type: FLOAT '(' INTNUM . ')'
+
+    ')'  shift, and go to state 386
+
+
+State 371
+
+  200 data_type: NUMERIC '(' INTNUM . ')'
+  201          | NUMERIC '(' INTNUM . ',' INTNUM ')'
+
+    ')'  shift, and go to state 387
+    ','  shift, and go to state 388
+
+
+State 372
+
+   20 column_def_opt: NOT . NULLX
+   21               | NOT . NULLX UNIQUE
+   22               | NOT . NULLX PRIMARY KEY
+
+    NULLX  shift, and go to state 389
+
+
+State 373
+
+   26 column_def_opt: CHECK . '(' search_condition ')'
+
+    '('  shift, and go to state 390
+
+
+State 374
+
+   23 column_def_opt: DEFAULT . literal
+   24               | DEFAULT . NULLX
+   25               | DEFAULT . USER
+
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NULLX      shift, and go to state 391
+    USER       shift, and go to state 392
+
+    literal  go to state 393
+
+
+State 375
+
+   27 column_def_opt: REFERENCES . table
+   28               | REFERENCES . table '(' column_commalist ')'
+
+    NAME  shift, and go to state 42
+
+    table  go to state 394
+
+
+State 376
+
+   19 column_def_opt_list: column_def_opt_list column_def_opt .
+
+    $default  reduce using rule 19 (column_def_opt_list)
+
+
+State 377
+
+   38 opt_with_check_option: WITH CHECK . OPTION
+
+    OPTION  shift, and go to state 395
+
+
+State 378
+
+   43 opt_with_grant_option: WITH GRANT . OPTION
+
+    OPTION  shift, and go to state 396
+
+
+State 379
+
+   55 grantee_commalist: grantee_commalist ',' grantee .
+
+    $default  reduce using rule 55 (grantee_commalist)
+
+
+State 380
+
+  129 column_ref_commalist: column_ref_commalist ',' column_ref .
+
+    $default  reduce using rule 129 (column_ref_commalist)
+
+
+State 381
+
+   31 table_constraint_def: FOREIGN KEY '(' column_commalist ')' . REFERENCES table
+   32                     | FOREIGN KEY '(' column_commalist ')' . REFERENCES table '(' column_commalist ')'
+
+    REFERENCES  shift, and go to state 397
+
+
+State 382
+
+   30 table_constraint_def: PRIMARY KEY '(' column_commalist ')' .
+
+    $default  reduce using rule 30 (table_constraint_def)
+
+
+State 383
+
+  198 data_type: CHARACTER '(' INTNUM ')' .
+
+    $default  reduce using rule 198 (data_type)
+
+
+State 384
+
+  203 data_type: DECIMAL '(' INTNUM ')' .
+
+    $default  reduce using rule 203 (data_type)
+
+
+State 385
+
+  204 data_type: DECIMAL '(' INTNUM ',' . INTNUM ')'
+
+    INTNUM  shift, and go to state 398
+
+
+State 386
+
+  208 data_type: FLOAT '(' INTNUM ')' .
+
+    $default  reduce using rule 208 (data_type)
+
+
+State 387
+
+  200 data_type: NUMERIC '(' INTNUM ')' .
+
+    $default  reduce using rule 200 (data_type)
+
+
+State 388
+
+  201 data_type: NUMERIC '(' INTNUM ',' . INTNUM ')'
+
+    INTNUM  shift, and go to state 399
+
+
+State 389
+
+   20 column_def_opt: NOT NULLX .
+   21               | NOT NULLX . UNIQUE
+   22               | NOT NULLX . PRIMARY KEY
+
+    PRIMARY  shift, and go to state 400
+    UNIQUE   shift, and go to state 401
+
+    $default  reduce using rule 20 (column_def_opt)
+
+
+State 390
+
+   26 column_def_opt: CHECK '(' . search_condition ')'
+
+    NAME       shift, and go to state 54
+    STRING     shift, and go to state 55
+    INTNUM     shift, and go to state 56
+    APPROXNUM  shift, and go to state 57
+    NOT        shift, and go to state 125
+    '+'        shift, and go to state 58
+    '-'        shift, and go to state 59
+    AMMSC      shift, and go to state 61
+    EXISTS     shift, and go to state 127
+    PARAMETER  shift, and go to state 62
+    USER       shift, and go to state 63
+    '('        shift, and go to state 128
+
+    $default  reduce using rule 132 (search_condition)
+
+    search_condition      go to state 402
+    predicate             go to state 130
+    comparison_predicate  go to state 131
+    between_predicate     go to state 132
+    like_predicate        go to state 133
+    test_for_null         go to state 134
+    in_predicate          go to state 135
+    all_or_any_predicate  go to state 136
+    existence_test        go to state 137
+    scalar_exp            go to state 138
+    atom                  go to state 68
+    parameter_ref         go to state 69
+    function_ref          go to state 70
+    literal               go to state 71
+    column_ref            go to state 139
+    parameter             go to state 73
+
+
+State 391
+
+   24 column_def_opt: DEFAULT NULLX .
+
+    $default  reduce using rule 24 (column_def_opt)
+
+
+State 392
+
+   25 column_def_opt: DEFAULT USER .
+
+    $default  reduce using rule 25 (column_def_opt)
+
+
+State 393
+
+   23 column_def_opt: DEFAULT literal .
+
+    $default  reduce using rule 23 (column_def_opt)
+
+
+State 394
+
+   27 column_def_opt: REFERENCES table .
+   28               | REFERENCES table . '(' column_commalist ')'
+
+    '('  shift, and go to state 403
+
+    $default  reduce using rule 27 (column_def_opt)
+
+
+State 395
+
+   38 opt_with_check_option: WITH CHECK OPTION .
+
+    $default  reduce using rule 38 (opt_with_check_option)
+
+
+State 396
+
+   43 opt_with_grant_option: WITH GRANT OPTION .
+
+    $default  reduce using rule 43 (opt_with_grant_option)
+
+
+State 397
+
+   31 table_constraint_def: FOREIGN KEY '(' column_commalist ')' REFERENCES . table
+   32                     | FOREIGN KEY '(' column_commalist ')' REFERENCES . table '(' column_commalist ')'
+
+    NAME  shift, and go to state 42
+
+    table  go to state 404
+
+
+State 398
+
+  204 data_type: DECIMAL '(' INTNUM ',' INTNUM . ')'
+
+    ')'  shift, and go to state 405
+
+
+State 399
+
+  201 data_type: NUMERIC '(' INTNUM ',' INTNUM . ')'
+
+    ')'  shift, and go to state 406
+
+
+State 400
+
+   22 column_def_opt: NOT NULLX PRIMARY . KEY
+
+    KEY  shift, and go to state 407
+
+
+State 401
+
+   21 column_def_opt: NOT NULLX UNIQUE .
+
+    $default  reduce using rule 21 (column_def_opt)
+
+
+State 402
+
+   26 column_def_opt: CHECK '(' search_condition . ')'
+  133 search_condition: search_condition . OR search_condition
+  134                 | search_condition . AND search_condition
+
+    OR   shift, and go to state 186
+    AND  shift, and go to state 187
+    ')'  shift, and go to state 408
+
+
+State 403
+
+   28 column_def_opt: REFERENCES table '(' . column_commalist ')'
+
+    NAME  shift, and go to state 106
+
+    column_commalist  go to state 409
+    column            go to state 142
+
+
+State 404
+
+   31 table_constraint_def: FOREIGN KEY '(' column_commalist ')' REFERENCES table .
+   32                     | FOREIGN KEY '(' column_commalist ')' REFERENCES table . '(' column_commalist ')'
+
+    '('  shift, and go to state 410
+
+    $default  reduce using rule 31 (table_constraint_def)
+
+
+State 405
+
+  204 data_type: DECIMAL '(' INTNUM ',' INTNUM ')' .
+
+    $default  reduce using rule 204 (data_type)
+
+
+State 406
+
+  201 data_type: NUMERIC '(' INTNUM ',' INTNUM ')' .
+
+    $default  reduce using rule 201 (data_type)
+
+
+State 407
+
+   22 column_def_opt: NOT NULLX PRIMARY KEY .
+
+    $default  reduce using rule 22 (column_def_opt)
+
+
+State 408
+
+   26 column_def_opt: CHECK '(' search_condition ')' .
+
+    $default  reduce using rule 26 (column_def_opt)
+
+
+State 409
+
+   28 column_def_opt: REFERENCES table '(' column_commalist . ')'
+   35 column_commalist: column_commalist . ',' column
+
+    ')'  shift, and go to state 411
+    ','  shift, and go to state 196
+
+
+State 410
+
+   32 table_constraint_def: FOREIGN KEY '(' column_commalist ')' REFERENCES table '(' . column_commalist ')'
+
+    NAME  shift, and go to state 106
+
+    column_commalist  go to state 412
+    column            go to state 142
+
+
+State 411
+
+   28 column_def_opt: REFERENCES table '(' column_commalist ')' .
+
+    $default  reduce using rule 28 (column_def_opt)
+
+
+State 412
+
+   32 table_constraint_def: FOREIGN KEY '(' column_commalist ')' REFERENCES table '(' column_commalist . ')'
+   35 column_commalist: column_commalist . ',' column
+
+    ')'  shift, and go to state 413
+    ','  shift, and go to state 196
+
+
+State 413
+
+   32 table_constraint_def: FOREIGN KEY '(' column_commalist ')' REFERENCES table '(' column_commalist ')' .
+
+    $default  reduce using rule 32 (table_constraint_def)
